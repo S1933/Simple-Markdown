@@ -2,7 +2,11 @@
 //  SimpleMarkdownApp.swift
 //  SimpleMarkdown
 //
-//  Created by Jean-Philippe Deis Nuel on 16/08/2026.
+//  Entry point. DocumentGroup gives us — for free — the system document
+//  browser, Files.app / iCloud Drive integration, rename, duplicate,
+//  move, tags, and per-document undo stacks.
+//
+//  There is no app-owned database. The user owns the .md files.
 //
 
 import SwiftUI
@@ -10,8 +14,8 @@ import SwiftUI
 @main
 struct SimpleMarkdownApp: App {
     var body: some Scene {
-        DocumentGroup(newDocument: SimpleMarkdownDocument()) { file in
-            ContentView(document: file.$document)
+        DocumentGroup(newDocument: MarkdownFile()) { configuration in
+            EditorView(text: configuration.$document.text)
         }
     }
 }
