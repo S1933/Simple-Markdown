@@ -6,7 +6,18 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		A10000000000000000000002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E84F7E1330324BA200CF4814 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E84F7E1A30324BA200CF4814;
+			remoteInfo = SimpleMarkdown;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		A10000000000000000000001 /* SimpleMarkdownTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimpleMarkdownTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E84F7E1B30324BA200CF4814 /* SimpleMarkdown.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimpleMarkdown.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -21,6 +32,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		A10000000000000000000003 /* SimpleMarkdownTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SimpleMarkdownTests;
+			sourceTree = "<group>";
+		};
 		E84F7E1D30324BA200CF4814 /* SimpleMarkdown */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -32,6 +48,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		A10000000000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E84F7E1830324BA200CF4814 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -46,6 +69,7 @@
 			isa = PBXGroup;
 			children = (
 				E84F7E1D30324BA200CF4814 /* SimpleMarkdown */,
+				A10000000000000000000003 /* SimpleMarkdownTests */,
 				E84F7E1C30324BA200CF4814 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,6 +78,7 @@
 			isa = PBXGroup;
 			children = (
 				E84F7E1B30324BA200CF4814 /* SimpleMarkdown.app */,
+				A10000000000000000000001 /* SimpleMarkdownTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -61,6 +86,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		A10000000000000000000005 /* SimpleMarkdownTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000006 /* Build configuration list for PBXNativeTarget "SimpleMarkdownTests" */;
+			buildPhases = (
+				A10000000000000000000007 /* Sources */,
+				A10000000000000000000004 /* Frameworks */,
+				A10000000000000000000008 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A10000000000000000000009 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A10000000000000000000003 /* SimpleMarkdownTests */,
+			);
+			name = SimpleMarkdownTests;
+			packageProductDependencies = (
+			);
+			productName = SimpleMarkdownTests;
+			productReference = A10000000000000000000001 /* SimpleMarkdownTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		E84F7E1A30324BA200CF4814 /* SimpleMarkdown */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = E84F7E2830324BA300CF4814 /* Build configuration list for PBXNativeTarget "SimpleMarkdown" */;
@@ -93,6 +141,10 @@
 				LastSwiftUpdateCheck = 2660;
 				LastUpgradeCheck = 2660;
 				TargetAttributes = {
+					A10000000000000000000005 = {
+						CreatedOnToolsVersion = 26.6;
+						TestTargetID = E84F7E1A30324BA200CF4814;
+					};
 					E84F7E1A30324BA200CF4814 = {
 						CreatedOnToolsVersion = 26.6;
 					};
@@ -113,11 +165,19 @@
 			projectRoot = "";
 			targets = (
 				E84F7E1A30324BA200CF4814 /* SimpleMarkdown */,
+				A10000000000000000000005 /* SimpleMarkdownTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		A10000000000000000000008 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E84F7E1930324BA200CF4814 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -128,6 +188,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		A10000000000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E84F7E1730324BA200CF4814 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -137,7 +204,53 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		A10000000000000000000009 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E84F7E1A30324BA200CF4814 /* SimpleMarkdown */;
+			targetProxy = A10000000000000000000002 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		A1000000000000000000000A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Z4VCPP9J7E;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = s1933.SimpleMarkdownTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SimpleMarkdown.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SimpleMarkdown";
+			};
+			name = Debug;
+		};
+		A1000000000000000000000B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Z4VCPP9J7E;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = s1933.SimpleMarkdownTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SimpleMarkdown.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SimpleMarkdown";
+			};
+			name = Release;
+		};
 		E84F7E2930324BA300CF4814 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -330,6 +443,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		A10000000000000000000006 /* Build configuration list for PBXNativeTarget "SimpleMarkdownTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1000000000000000000000A /* Debug */,
+				A1000000000000000000000B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		E84F7E1630324BA200CF4814 /* Build configuration list for PBXProject "SimpleMarkdown" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
