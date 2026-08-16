@@ -2,20 +2,28 @@
 //  SimpleMarkdownApp.swift
 //  SimpleMarkdown
 //
-//  Entry point. DocumentGroup gives us — for free — the system document
-//  browser, Files.app / iCloud Drive integration, rename, duplicate,
-//  move, tags, and per-document undo stacks.
-//
-//  There is no app-owned database. The user owns the .md files.
+//  Entry point for the app-owned Markdown library.
 //
 
 import SwiftUI
 
 @main
 struct SimpleMarkdownApp: App {
+    private let library: DocumentLibrary
+
+    init() {
+        do {
+            library = try ProcessInfo.processInfo.arguments.contains("--ui-testing")
+                ? .uiTesting()
+                : .live()
+        } catch {
+            fatalError("Unable to initialize document library: \(error)")
+        }
+    }
+
     var body: some Scene {
-        DocumentGroup(newDocument: MarkdownFile()) { configuration in
-            EditorView(text: configuration.$document.text)
+        WindowGroup {
+            LibraryView(library: library)
         }
     }
 }

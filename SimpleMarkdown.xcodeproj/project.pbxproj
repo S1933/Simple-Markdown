@@ -14,10 +14,18 @@
 			remoteGlobalIDString = E84F7E1A30324BA200CF4814;
 			remoteInfo = SimpleMarkdown;
 		};
+		B10000000000000000000002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E84F7E1330324BA200CF4814 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E84F7E1A30324BA200CF4814;
+			remoteInfo = SimpleMarkdown;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		A10000000000000000000001 /* SimpleMarkdownTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimpleMarkdownTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000001 /* SimpleMarkdownUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimpleMarkdownUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E84F7E1B30324BA200CF4814 /* SimpleMarkdown.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimpleMarkdown.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -37,6 +45,11 @@
 			path = SimpleMarkdownTests;
 			sourceTree = "<group>";
 		};
+		B10000000000000000000003 /* SimpleMarkdownUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SimpleMarkdownUITests;
+			sourceTree = "<group>";
+		};
 		E84F7E1D30324BA200CF4814 /* SimpleMarkdown */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -49,6 +62,13 @@
 
 /* Begin PBXFrameworksBuildPhase section */
 		A10000000000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B10000000000000000000004 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -70,6 +90,7 @@
 			children = (
 				E84F7E1D30324BA200CF4814 /* SimpleMarkdown */,
 				A10000000000000000000003 /* SimpleMarkdownTests */,
+				B10000000000000000000003 /* SimpleMarkdownUITests */,
 				E84F7E1C30324BA200CF4814 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -79,6 +100,7 @@
 			children = (
 				E84F7E1B30324BA200CF4814 /* SimpleMarkdown.app */,
 				A10000000000000000000001 /* SimpleMarkdownTests.xctest */,
+				B10000000000000000000001 /* SimpleMarkdownUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -108,6 +130,29 @@
 			productName = SimpleMarkdownTests;
 			productReference = A10000000000000000000001 /* SimpleMarkdownTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		B10000000000000000000005 /* SimpleMarkdownUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B10000000000000000000006 /* Build configuration list for PBXNativeTarget "SimpleMarkdownUITests" */;
+			buildPhases = (
+				B10000000000000000000007 /* Sources */,
+				B10000000000000000000004 /* Frameworks */,
+				B10000000000000000000008 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B10000000000000000000009 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				B10000000000000000000003 /* SimpleMarkdownUITests */,
+			);
+			name = SimpleMarkdownUITests;
+			packageProductDependencies = (
+			);
+			productName = SimpleMarkdownUITests;
+			productReference = B10000000000000000000001 /* SimpleMarkdownUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 		E84F7E1A30324BA200CF4814 /* SimpleMarkdown */ = {
 			isa = PBXNativeTarget;
@@ -145,6 +190,10 @@
 						CreatedOnToolsVersion = 26.6;
 						TestTargetID = E84F7E1A30324BA200CF4814;
 					};
+					B10000000000000000000005 = {
+						CreatedOnToolsVersion = 26.6;
+						TestTargetID = E84F7E1A30324BA200CF4814;
+					};
 					E84F7E1A30324BA200CF4814 = {
 						CreatedOnToolsVersion = 26.6;
 					};
@@ -166,12 +215,20 @@
 			targets = (
 				E84F7E1A30324BA200CF4814 /* SimpleMarkdown */,
 				A10000000000000000000005 /* SimpleMarkdownTests */,
+				B10000000000000000000005 /* SimpleMarkdownUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		A10000000000000000000008 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B10000000000000000000008 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -195,6 +252,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B10000000000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E84F7E1730324BA200CF4814 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -209,6 +273,11 @@
 			isa = PBXTargetDependency;
 			target = E84F7E1A30324BA200CF4814 /* SimpleMarkdown */;
 			targetProxy = A10000000000000000000002 /* PBXContainerItemProxy */;
+		};
+		B10000000000000000000009 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E84F7E1A30324BA200CF4814 /* SimpleMarkdown */;
+			targetProxy = B10000000000000000000002 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -251,6 +320,42 @@
 			};
 			name = Release;
 		};
+		B1000000000000000000000A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Z4VCPP9J7E;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = s1933.SimpleMarkdownUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = SimpleMarkdown;
+			};
+			name = Debug;
+		};
+		B1000000000000000000000B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Z4VCPP9J7E;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = s1933.SimpleMarkdownUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = SimpleMarkdown;
+			};
+			name = Release;
+		};
 		E84F7E2930324BA300CF4814 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -267,7 +372,6 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportsDocumentBrowser = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -301,7 +405,6 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportsDocumentBrowser = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -448,6 +551,15 @@
 			buildConfigurations = (
 				A1000000000000000000000A /* Debug */,
 				A1000000000000000000000B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B10000000000000000000006 /* Build configuration list for PBXNativeTarget "SimpleMarkdownUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B1000000000000000000000A /* Debug */,
+				B1000000000000000000000B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

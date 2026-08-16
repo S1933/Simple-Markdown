@@ -31,6 +31,39 @@ struct DocumentLibrary {
         )
     }
 
+    static func live(fileManager: FileManager = .default) throws -> Self {
+        let applicationSupport = try fileManager.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )
+        return try Self(
+            rootURL: applicationSupport
+                .appendingPathComponent("SimpleMarkdown", isDirectory: true)
+                .appendingPathComponent("Documents", isDirectory: true),
+            fileManager: fileManager
+        )
+    }
+
+    static func uiTesting(fileManager: FileManager = .default) throws -> Self {
+        let applicationSupport = try fileManager.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )
+        let testRoot = applicationSupport
+            .appendingPathComponent("SimpleMarkdown-UITests", isDirectory: true)
+        if fileManager.fileExists(atPath: testRoot.path) {
+            try fileManager.removeItem(at: testRoot)
+        }
+        return try Self(
+            rootURL: testRoot.appendingPathComponent("Documents", isDirectory: true),
+            fileManager: fileManager
+        )
+    }
+
     func documents() throws -> [LibraryDocument] {
         let keys: Set<URLResourceKey> = [.isRegularFileKey, .contentModificationDateKey]
         return try fileManager
