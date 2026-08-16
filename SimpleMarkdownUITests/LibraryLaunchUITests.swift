@@ -11,4 +11,14 @@ final class LibraryLaunchUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Nouveau document"].exists)
         XCTAssertTrue(app.buttons["Importer"].exists)
     }
+
+    func testLibraryInitializationFailureShowsErrorInsteadOfCrashing() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing-library-failure"]
+        app.launch()
+
+        XCTAssertTrue(
+            app.otherElements["library.startup-error"].waitForExistence(timeout: 5)
+        )
+    }
 }

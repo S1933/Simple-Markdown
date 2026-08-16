@@ -9,21 +9,45 @@ import SwiftUI
 
 @main
 struct SimpleMarkdownApp: App {
-    private let library: DocumentLibrary
+    private let library: Result<DocumentLibrary, Error>
 
     init() {
-        do {
-            library = try ProcessInfo.processInfo.arguments.contains("--ui-testing")
+        let arguments = ProcessInfo.processInfo.arguments
+#if DEBUG
+        if arguments.contains("--ui-testing-library-failure") {
+            library = .failure(CocoaError(.fileWriteNoPermission))
+            return
+        }
+#endif
+        library = Result {
+            try arguments.contains("--ui-testing")
                 ? .uiTesting()
                 : .live()
-        } catch {
-            fatalError("Unable to initialize document library: \(error)")
         }
     }
 
     var body: some Scene {
         WindowGroup {
-            LibraryView(library: library)
+            switch library {
+            case .success(let library):
+                LibraryView(library: library)
+            case .failure(let error):
+                LibraryStartupErrorView(error: error)
+            }
         }
+    }
+}
+
+private struct LibraryStartupErrorView: View {
+    let error: Error
+
+    var body: some View {
+        ContentUnavailableView(
+            "Bibliothèque indisponible",
+            systemImage: "exclamationmark.folder",
+            description: Text(error.localizedDescription)
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("library.startup-error")
     }
 }
