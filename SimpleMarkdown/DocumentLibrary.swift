@@ -3,6 +3,7 @@ import Foundation
 struct LibraryDocument: Identifiable, Hashable {
     let url: URL
     let modifiedAt: Date
+    let title: String
 
     var id: URL { url }
     var name: String { url.lastPathComponent }
@@ -80,7 +81,8 @@ struct DocumentLibrary {
                 guard values.isRegularFile == true else { return nil }
                 return LibraryDocument(
                     url: url,
-                    modifiedAt: values.contentModificationDate ?? .distantPast
+                    modifiedAt: values.contentModificationDate ?? .distantPast,
+                    title: title(for: url)
                 )
             }
             .sorted {
@@ -151,9 +153,28 @@ struct DocumentLibrary {
         }
     }
 
+    private func title(for url: URL) -> String {
+        guard let text = try? read(url), let firstLine = text.split(
+            separator: "\n",
+            maxSplits: 1,
+            omittingEmptySubsequences: false
+        ).first else {
+            return url.lastPathComponent
+        }
+        let line = firstLine.trimmingCharacters(in: .whitespacesAndNewlines)
+        let title = line.drop(while: { $0 == "#" })
+            .trimmingCharacters(in: .whitespaces)
+        return title.isEmpty ? url.lastPathComponent : title
+    }
+
     private func managedURL(_ url: URL) throws -> URL {
         let url = url.standardizedFileURL
-        guard url.deletingLastPathComponent() == rootURL else {
+        let parentPath = url
+            .deletingLastPathComponent()
+            .resolvingSymlinksInPath()
+            .path
+        let rootPath = rootURL.resolvingSymlinksInPath().path
+        guard parentPath == rootPath else {
             throw CocoaError(.fileNoSuchFile)
         }
         return url

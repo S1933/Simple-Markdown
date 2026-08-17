@@ -39,6 +39,22 @@ final class DocumentLibraryTests: XCTestCase {
         XCTAssertEqual(names, ["a.md", "b.markdown", "c.mdown"])
     }
 
+    func testListUsesFirstMarkdownLineAsTitle() throws {
+        let library = try DocumentLibrary(rootURL: root)
+        try Data("# Mon document\nContenu".utf8).write(
+            to: root.appendingPathComponent("note.md")
+        )
+
+        XCTAssertEqual(try library.documents().first?.title, "Mon document")
+    }
+
+    func testListFallsBackToFilenameWhenFirstLineIsEmpty() throws {
+        let library = try DocumentLibrary(rootURL: root)
+        try Data("\nContenu".utf8).write(to: root.appendingPathComponent("note.md"))
+
+        XCTAssertEqual(try library.documents().first?.title, "note.md")
+    }
+
     func testCreateUsesUniqueUntitledNames() throws {
         let library = try DocumentLibrary(rootURL: root)
 
