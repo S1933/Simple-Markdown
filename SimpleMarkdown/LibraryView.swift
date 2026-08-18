@@ -47,6 +47,11 @@ struct LibraryView: View {
                 addFromText(text, suggestedName: "Collé")
             }
         }
+        .sheet(isPresented: $isImportingFromURL) {
+            URLImportSheet(loader: RemoteMarkdownLoader()) { text, suggestedName in
+                addFromText(text, suggestedName: suggestedName)
+            }
+        }
         .confirmationDialog(
             "Supprimer ce document ?",
             isPresented: isConfirmingDelete,

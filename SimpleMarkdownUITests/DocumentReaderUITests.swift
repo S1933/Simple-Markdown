@@ -28,4 +28,10 @@ final class DocumentReaderUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Pasted note"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.textViews["document.editor"].exists)
     }
+
+    func testURLImportAddsAndOpensADocument() {
+        // Requires a reachable https Markdown fixture; point at a stable raw
+        // GitHub URL used only for this test, or a local test server if the
+        // CI environment restricts outbound network access.
+    }
 }
