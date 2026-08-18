@@ -165,11 +165,10 @@ struct LibraryView: View {
             .accessibilityIdentifier("library.add")
         }
         ToolbarItem(placement: .primaryAction) {
-            CircularToolbarButton(
-                systemImage: "magnifyingglass",
-                accessibilityLabel: "Rechercher"
-            ) {
+            Button {
                 isSearching = true
+            } label: {
+                Image(systemName: "magnifyingglass")
             }
             .accessibilityIdentifier("library.search-button")
         }
