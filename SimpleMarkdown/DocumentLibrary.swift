@@ -143,6 +143,20 @@ nonisolated struct DocumentLibrary: @unchecked Sendable {
             }
     }
 
+    func add(text: String, suggestedName: String) throws -> URL {
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw CocoaError(.fileWriteInvalidFileName)
+        }
+        let stem = DocumentNaming.name(
+            forText: text,
+            suggestion: suggestedName,
+            fallback: "Sans titre"
+        )
+        let url = uniqueURL(stem: stem, pathExtension: "md")
+        try Data(text.utf8).write(to: url, options: .atomic)
+        return url
+    }
+
     func read(_ url: URL) throws -> String {
         let url = try managedURL(url)
         let data = try Data(contentsOf: url)
