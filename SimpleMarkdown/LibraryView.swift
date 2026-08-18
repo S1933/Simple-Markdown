@@ -8,6 +8,8 @@ struct LibraryView: View {
     @State private var selectedDocument: LibraryDocument?
     @State private var errorMessage: String?
     @State private var isImporting = false
+    @State private var isPastingText = false
+    @State private var isImportingFromURL = false
     @State private var pendingDeletion: LibraryDocument?
     @State private var isSearching = false
     @State private var index: SearchIndex?
@@ -90,7 +92,7 @@ struct LibraryView: View {
                 ContentUnavailableView(
                     "Aucun document",
                     systemImage: "doc.text",
-                    description: Text("Créez un document Markdown.")
+                    description: Text("Collez du texte, chargez une URL, ou importez un fichier Markdown.")
                 )
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("library.empty")
@@ -128,9 +130,20 @@ struct LibraryView: View {
     private var toolbarItems: some ToolbarContent {
         ToolbarItem(placement: .primaryAction) {
             Menu {
-                Button("Importer", systemImage: "square.and.arrow.down") {
+                Button("Coller le texte", systemImage: "doc.on.clipboard") {
+                    isPastingText = true
+                }
+                .accessibilityIdentifier("library.add.paste")
+
+                Button("Depuis une URL", systemImage: "link") {
+                    isImportingFromURL = true
+                }
+                .accessibilityIdentifier("library.add.url")
+
+                Button("Importer un fichier", systemImage: "square.and.arrow.down") {
                     isImporting = true
                 }
+                .accessibilityIdentifier("library.add.file")
             } label: {
                 Image(systemName: "plus")
             }
