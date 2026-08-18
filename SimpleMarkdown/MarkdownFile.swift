@@ -12,6 +12,6 @@ import UniformTypeIdentifiers
 extension UTType {
     /// Markdown's public identifier, originally registered by Daring Fireball.
     /// `importedAs:` means: "other apps may own this type; we understand it too."
-    /// The matching declaration lives in Info.plist (see SETUP.md).
+    /// The matching declaration lives in Info.plist (UTImportedTypeDeclarations).
     static let markdown = UTType(importedAs: "net.daringfireball.markdown")
 }

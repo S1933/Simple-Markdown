@@ -12,7 +12,6 @@ xcuserdata/
 # Swift Package Manager
 .build/
 .swiftpm/
-Package.resolved
 
 # Secrets
 *.xcconfig.local

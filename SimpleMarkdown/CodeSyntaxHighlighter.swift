@@ -3,31 +3,21 @@ import SwiftUI
 
 struct AppCodeSyntaxHighlighter: CodeSyntaxHighlighter {
     func highlightCode(_ code: String, language: String?) -> Text {
-        guard let language = language?.lowercased() else {
-            return plain(code)
-        }
-        switch language {
-        case "swift":
-            return SwiftHighlighter.highlight(code)
-        case "javascript", "js", "typescript", "ts":
-            return JavaScriptHighlighter.highlight(code)
-        case "json":
-            return JSONHighlighter.highlight(code)
-        case "bash", "sh", "shell", "zsh":
-            return ShellHighlighter.highlight(code)
-        case "python", "py":
-            return PythonHighlighter.highlight(code)
-        case "html", "xml":
-            return MarkupHighlighter.highlight(code)
-        default:
-            return plain(code)
-        }
+        Text(Self.highlightedCode(code, language: language))
     }
 
-    private func plain(_ code: String) -> Text {
-        Text(code)
-            .font(.custom("JetBrains Mono", size: 14))
-            .foregroundColor(CodePalette.plain)
+    static func highlightedCode(_ code: String, language: String?) -> AttributedString {
+        let rules: [CodeRule]
+        switch language?.lowercased() {
+        case "swift": rules = swiftRules
+        case "javascript", "js", "typescript", "ts": rules = jsRules
+        case "json": rules = jsonRules
+        case "bash", "sh", "shell", "zsh": rules = shellRules
+        case "python", "py": rules = pythonRules
+        case "html", "xml": rules = markupRules
+        default: rules = []
+        }
+        return applyHighlighting(code, rules: rules)
     }
 }
 
@@ -41,55 +31,84 @@ private enum CodeToken {
 }
 
 private struct CodeRule {
-    let pattern: String
+    let regex: NSRegularExpression
     let token: CodeToken
+    let priority: Int
+
+    init(pattern: String, token: CodeToken, priority: Int? = nil) {
+        regex = try! NSRegularExpression(pattern: pattern)
+        self.token = token
+        self.priority = priority ?? token.defaultPriority
+    }
 }
 
-private func applyHighlighting(_ code: String, rules: [CodeRule]) -> Text {
+private extension CodeToken {
+    var defaultPriority: Int {
+        switch self {
+        case .comment: return 0
+        case .string: return 1
+        case .keyword: return 2
+        case .type: return 3
+        case .number: return 4
+        case .plain: return 5
+        }
+    }
+}
+
+private func applyHighlighting(_ code: String, rules: [CodeRule]) -> AttributedString {
+    guard code.count <= 20_000 else { return styled(code, color: CodePalette.plain) }
     let nsCode = code as NSString
     let fullRange = NSRange(location: 0, length: nsCode.length)
-    var matches: [(NSRange, CodeToken)] = []
+    var matches: [(range: NSRange, token: CodeToken, priority: Int)] = []
     for rule in rules {
-        guard let regex = try? NSRegularExpression(pattern: rule.pattern) else { continue }
-        regex.enumerateMatches(in: code, range: fullRange) { result, _, _ in
+        rule.regex.enumerateMatches(in: code, range: fullRange) { result, _, _ in
             if let range = result?.range, range.length > 0 {
-                matches.append((range, rule.token))
+                matches.append((range, rule.token, rule.priority))
             }
         }
     }
-    matches.sort { $0.0.location < $1.0.location }
+    matches.sort {
+        if $0.range.location != $1.range.location {
+            return $0.range.location < $1.range.location
+        }
+        if $0.range.length != $1.range.length {
+            return $0.range.length > $1.range.length
+        }
+        return $0.priority < $1.priority
+    }
     var deduped: [(NSRange, CodeToken)] = []
     var lastEnd = 0
-    for (range, token) in matches {
+    for (range, token, _) in matches {
         if range.location >= lastEnd {
             deduped.append((range, token))
             lastEnd = range.location + range.length
         }
     }
 
-    var result = Text("")
+    var result = AttributedString()
     var cursor = 0
     for (range, token) in deduped {
         if range.location > cursor {
             let plainRange = NSRange(location: cursor, length: range.location - cursor)
             let chunk = nsCode.substring(with: plainRange)
-            result = result + styled(chunk, color: CodePalette.plain)
+            result.append(styled(chunk, color: CodePalette.plain))
         }
         let chunk = nsCode.substring(with: range)
-        result = result + styled(chunk, color: color(for: token))
+        result.append(styled(chunk, color: color(for: token)))
         cursor = range.location + range.length
     }
     if cursor < nsCode.length {
         let tail = nsCode.substring(from: cursor)
-        result = result + styled(tail, color: CodePalette.plain)
+        result.append(styled(tail, color: CodePalette.plain))
     }
     return result
 }
 
-private func styled(_ text: String, color: Color) -> Text {
-    Text(text)
-        .font(.custom("JetBrains Mono", size: 14))
-        .foregroundColor(color)
+private func styled(_ text: String, color: Color) -> AttributedString {
+    var result = AttributedString(text)
+    result.font = .custom("JetBrainsMono-Regular", size: 14, relativeTo: .body)
+    result.foregroundColor = color
+    return result
 }
 
 private func color(for token: CodeToken) -> Color {
@@ -112,12 +131,6 @@ private let swiftRules: [CodeRule] = [
     CodeRule(pattern: "\\b\\d+(?:\\.\\d+)?\\b", token: .number),
 ]
 
-private enum SwiftHighlighter {
-    static func highlight(_ code: String) -> Text {
-        applyHighlighting(code, rules: swiftRules)
-    }
-}
-
 private let jsRules: [CodeRule] = [
     CodeRule(pattern: "//[^\n]*", token: .comment),
     CodeRule(pattern: "/\\*[\\s\\S]*?\\*/", token: .comment),
@@ -129,24 +142,12 @@ private let jsRules: [CodeRule] = [
     CodeRule(pattern: "\\b\\d+(?:\\.\\d+)?\\b", token: .number),
 ]
 
-private enum JavaScriptHighlighter {
-    static func highlight(_ code: String) -> Text {
-        applyHighlighting(code, rules: jsRules)
-    }
-}
-
 private let jsonRules: [CodeRule] = [
     CodeRule(pattern: "\"(?:[^\"\\\\\n]|\\\\.)*\"\\s*:", token: .keyword),
     CodeRule(pattern: "\"(?:[^\"\\\\\n]|\\\\.)*\"", token: .string),
     CodeRule(pattern: "\\b(?:true|false|null)\\b", token: .keyword),
     CodeRule(pattern: "\\b-?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?\\b", token: .number),
 ]
-
-private enum JSONHighlighter {
-    static func highlight(_ code: String) -> Text {
-        applyHighlighting(code, rules: jsonRules)
-    }
-}
 
 private let shellRules: [CodeRule] = [
     CodeRule(pattern: "#[^\n]*", token: .comment),
@@ -156,12 +157,6 @@ private let shellRules: [CodeRule] = [
     CodeRule(pattern: "\\$\\{[^}]+\\}", token: .type),
     CodeRule(pattern: "\\b(?:if|then|else|elif|fi|for|in|do|done|while|case|esac|function|return|exit|export|local|alias)\\b", token: .keyword),
 ]
-
-private enum ShellHighlighter {
-    static func highlight(_ code: String) -> Text {
-        applyHighlighting(code, rules: shellRules)
-    }
-}
 
 private let pythonRules: [CodeRule] = [
     CodeRule(pattern: "#[^\n]*", token: .comment),
@@ -174,12 +169,6 @@ private let pythonRules: [CodeRule] = [
     CodeRule(pattern: "\\b\\d+(?:\\.\\d+)?\\b", token: .number),
 ]
 
-private enum PythonHighlighter {
-    static func highlight(_ code: String) -> Text {
-        applyHighlighting(code, rules: pythonRules)
-    }
-}
-
 private let markupRules: [CodeRule] = [
     CodeRule(pattern: "<!--[\\s\\S]*?-->", token: .comment),
     CodeRule(pattern: "\"(?:[^\"\\\\\n]|\\\\.)*\"", token: .string),
@@ -188,9 +177,3 @@ private let markupRules: [CodeRule] = [
     CodeRule(pattern: "/?>", token: .keyword),
     CodeRule(pattern: "\\b(?:DOCTYPE|html|head|body|div|span|p|a|img|script|style|link|meta|title)\\b", token: .type),
 ]
-
-private enum MarkupHighlighter {
-    static func highlight(_ code: String) -> Text {
-        applyHighlighting(code, rules: markupRules)
-    }
-}

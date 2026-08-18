@@ -1,6 +1,6 @@
 import Foundation
 
-struct LibraryDocument: Identifiable, Hashable {
+nonisolated struct LibraryDocument: Identifiable, Hashable, Sendable {
     let url: URL
     let modifiedAt: Date
     let title: String
@@ -17,8 +17,9 @@ struct LibraryDocument: Identifiable, Hashable {
     }
 }
 
-struct DocumentLibrary {
+nonisolated struct DocumentLibrary: @unchecked Sendable {
     private static let markdownExtensions = Set(["md", "markdown", "mdown"])
+    private static let importExtensions = markdownExtensions.union(["txt", "text"])
 
     private let rootURL: URL
     private let fileManager: FileManager
@@ -32,19 +33,68 @@ struct DocumentLibrary {
         )
     }
 
-    static func live(fileManager: FileManager = .default) throws -> Self {
+    static func live(
+        fileManager: FileManager = .default,
+        defaults: UserDefaults = .standard
+    ) throws -> Self {
         let applicationSupport = try fileManager.url(
             for: .applicationSupportDirectory,
             in: .userDomainMask,
             appropriateFor: nil,
             create: true
         )
-        return try Self(
-            rootURL: applicationSupport
+        let documents = try fileManager.url(
+            for: .documentDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )
+        try migrateLegacyDocuments(
+            from: applicationSupport
                 .appendingPathComponent("SimpleMarkdown", isDirectory: true)
                 .appendingPathComponent("Documents", isDirectory: true),
+            to: documents,
+            fileManager: fileManager,
+            defaults: defaults
+        )
+        return try Self(
+            rootURL: documents,
             fileManager: fileManager
         )
+    }
+
+    static func migrateLegacyDocuments(
+        from legacyURL: URL,
+        to destinationURL: URL,
+        fileManager: FileManager,
+        defaults: UserDefaults
+    ) throws {
+        let key = "SimpleMarkdown.documentsMigration.v1"
+        guard !defaults.bool(forKey: key) else { return }
+        try fileManager.createDirectory(at: destinationURL, withIntermediateDirectories: true)
+        if fileManager.fileExists(atPath: legacyURL.path) {
+            let files = try fileManager.contentsOfDirectory(
+                at: legacyURL,
+                includingPropertiesForKeys: [.isRegularFileKey],
+                options: [.skipsHiddenFiles]
+            )
+            for source in files {
+                let values = try source.resourceValues(forKeys: [.isRegularFileKey])
+                guard values.isRegularFile == true,
+                      markdownExtensions.contains(source.pathExtension.lowercased()) else {
+                    continue
+                }
+                let stem = source.deletingPathExtension().lastPathComponent
+                let destination = uniqueURL(
+                    stem: stem,
+                    pathExtension: source.pathExtension,
+                    rootURL: destinationURL,
+                    fileManager: fileManager
+                )
+                try fileManager.moveItem(at: source, to: destination)
+            }
+        }
+        defaults.set(true, forKey: key)
     }
 
     static func uiTesting(fileManager: FileManager = .default) throws -> Self {
@@ -113,7 +163,7 @@ struct DocumentLibrary {
 
     func importDocument(from source: URL) throws -> URL {
         let pathExtension = source.pathExtension
-        guard Self.markdownExtensions.contains(pathExtension.lowercased()) else {
+        guard Self.importExtensions.contains(pathExtension.lowercased()) else {
             throw CocoaError(.fileReadUnknown)
         }
 
@@ -125,7 +175,10 @@ struct DocumentLibrary {
         }
 
         let stem = source.deletingPathExtension().lastPathComponent
-        let destination = uniqueURL(stem: stem, pathExtension: pathExtension)
+        let destinationExtension = Self.markdownExtensions.contains(pathExtension.lowercased())
+            ? pathExtension
+            : "md"
+        let destination = uniqueURL(stem: stem, pathExtension: destinationExtension)
         try fileManager.copyItem(at: source, to: destination)
         return destination
     }
@@ -135,11 +188,42 @@ struct DocumentLibrary {
         try Data(text.utf8).write(to: url, options: .atomic)
     }
 
+    func rename(_ url: URL, to newName: String) throws -> URL {
+        let url = try managedURL(url)
+        let sanitized = newName
+            .replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: ":", with: "-")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !sanitized.isEmpty else {
+            throw CocoaError(.fileWriteInvalidFileName)
+        }
+        guard sanitized != url.deletingPathExtension().lastPathComponent else {
+            return url
+        }
+        let destination = uniqueURL(stem: sanitized, pathExtension: url.pathExtension)
+        try fileManager.moveItem(at: url, to: destination)
+        return destination
+    }
+
     func delete(_ url: URL) throws {
         try fileManager.removeItem(at: managedURL(url))
     }
 
     private func uniqueURL(stem: String, pathExtension: String) -> URL {
+        Self.uniqueURL(
+            stem: stem,
+            pathExtension: pathExtension,
+            rootURL: rootURL,
+            fileManager: fileManager
+        )
+    }
+
+    private static func uniqueURL(
+        stem: String,
+        pathExtension: String,
+        rootURL: URL,
+        fileManager: FileManager
+    ) -> URL {
         var index = 1
         while true {
             let suffix = index == 1 ? "" : " \(index)"
@@ -154,14 +238,14 @@ struct DocumentLibrary {
     }
 
     private func title(for url: URL) -> String {
-        guard let text = try? read(url), let firstLine = text.split(
-            separator: "\n",
-            maxSplits: 1,
-            omittingEmptySubsequences: false
-        ).first else {
+        guard let handle = try? FileHandle(forReadingFrom: url) else {
             return url.lastPathComponent
         }
-        let line = firstLine.trimmingCharacters(in: .whitespacesAndNewlines)
+        defer { try? handle.close() }
+        let head = (try? handle.read(upToCount: 4096)) ?? Data()
+        let firstLine = head.prefix(while: { $0 != 0x0A })
+        let line = String(decoding: firstLine, as: UTF8.self)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         let title = line.drop(while: { $0 == "#" })
             .trimmingCharacters(in: .whitespaces)
         return title.isEmpty ? url.lastPathComponent : title

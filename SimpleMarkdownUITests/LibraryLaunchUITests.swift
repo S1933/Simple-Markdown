@@ -1,5 +1,6 @@
 import XCTest
 
+@MainActor
 final class LibraryLaunchUITests: XCTestCase {
     func testAddCreatesAndOpensDocumentDirectly() {
         let app = XCUIApplication()
@@ -8,10 +9,10 @@ final class LibraryLaunchUITests: XCTestCase {
 
         XCTAssertTrue(app.otherElements["library.empty"].waitForExistence(timeout: 5))
         app.buttons["library.add"].tap()
-        XCTAssertTrue(app.navigationBars["Sans titre.md"].waitForExistence(timeout: 5))
+        app.buttons["Nouveau document"].tap()
+        XCTAssertTrue(app.navigationBars["Sans titre"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         XCTAssertFalse(app.alerts["Une erreur est survenue"].exists)
-        XCTAssertFalse(app.staticTexts["0 words"].exists)
     }
 
     func testLibraryInitializationFailureShowsErrorInsteadOfCrashing() {

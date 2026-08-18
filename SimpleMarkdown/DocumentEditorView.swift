@@ -1,61 +1,94 @@
 import SwiftUI
 
 struct DocumentEditorView: View {
-    enum Mode: Equatable {
-        case preview
-        case edit
-    }
-
-    let document: LibraryDocument
     let library: DocumentLibrary
-    let onSaved: () -> Void
 
+    @State private var documentURL: URL
+    @State private var documentName: String
     @State private var text = ""
+    @State private var savedText = ""
     @State private var isLoaded = false
     @State private var errorMessage: String?
-    @State private var mode = Mode.preview
+    @State private var showingLecture = false
+    @State private var saveTask: Task<Void, Never>?
+    @Environment(\.scenePhase) private var scenePhase
+
+    init(document: LibraryDocument, library: DocumentLibrary) {
+        self.library = library
+        _documentURL = State(initialValue: document.url)
+        _documentName = State(
+            initialValue: document.url.deletingPathExtension().lastPathComponent
+        )
+    }
 
     var body: some View {
         Group {
             if isLoaded {
-                switch mode {
-                case .preview:
-                    MarkdownPreviewView(text: text)
-                case .edit:
-                    EditorView(text: $text)
-                }
+                EditorView(text: $text)
             } else {
                 ProgressView()
             }
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                ShareLink(item: document.url) {
+                ShareLink(item: documentURL) {
                     Label("Partager", systemImage: "square.and.arrow.up")
                 }
                 .accessibilityIdentifier("document.share")
             }
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    mode = mode == .preview ? .edit : .preview
+                Menu {
+                    Button("Lecture", systemImage: "book") {
+                        showingLecture = true
+                    }
+                    .accessibilityIdentifier("document.lecture")
                 } label: {
-                    Label(
-                        mode == .preview ? "Modifier" : "Aperçu",
-                        systemImage: mode == .preview ? "pencil" : "eye"
-                    )
+                    Image(systemName: "ellipsis.circle")
                 }
-                .accessibilityIdentifier("document.mode-toggle")
+                .accessibilityLabel("Plus")
+            }
+        }
+        .navigationTitle($documentName)
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showingLecture) {
+            NavigationStack {
+                MarkdownPreviewView(text: text)
+                    .navigationTitle(documentName)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Fermer") { showingLecture = false }
+                        }
+                    }
             }
         }
         .task { load() }
         .onChange(of: text) { _, newValue in
-            guard isLoaded else { return }
+            guard isLoaded, newValue != savedText else { return }
+            scheduleSave(newValue)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase != .active else { return }
+            saveTask?.cancel()
+            flush(text)
+        }
+        .onChange(of: documentName) { oldValue, newValue in
+            guard newValue != documentURL.deletingPathExtension().lastPathComponent else {
+                return
+            }
+            saveTask?.cancel()
+            flush(text)
             do {
-                try library.save(newValue, to: document.url)
-                onSaved()
+                documentURL = try library.rename(documentURL, to: newValue)
+                documentName = documentURL.deletingPathExtension().lastPathComponent
             } catch {
+                documentName = oldValue
                 errorMessage = error.localizedDescription
             }
+        }
+        .onDisappear {
+            saveTask?.cancel()
+            flush(text)
         }
         .alert("Impossible d’enregistrer", isPresented: hasError) {
             Button("OK") { errorMessage = nil }
@@ -74,15 +107,30 @@ struct DocumentEditorView: View {
     private func load() {
         guard !isLoaded else { return }
         do {
-            text = try library.read(document.url)
-            mode = Self.initialMode(for: text)
+            text = try library.read(documentURL)
+            savedText = text
             isLoaded = true
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
-    static func initialMode(for text: String) -> Mode {
-        text.isEmpty ? .edit : .preview
+    private func scheduleSave(_ newValue: String) {
+        saveTask?.cancel()
+        saveTask = Task {
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+            flush(newValue)
+        }
+    }
+
+    private func flush(_ newValue: String) {
+        guard isLoaded, newValue != savedText else { return }
+        do {
+            try library.save(newValue, to: documentURL)
+            savedText = newValue
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 }

@@ -55,6 +55,21 @@ final class DocumentLibraryTests: XCTestCase {
         XCTAssertEqual(try library.documents().first?.title, "note.md")
     }
 
+    func testOpeningDocumentDoesNotTouchModificationDate() throws {
+        let library = try DocumentLibrary(rootURL: root)
+        let url = root.appendingPathComponent("note.md")
+        try Data("# Titre\nContenu".utf8).write(to: url)
+        let before = try XCTUnwrap(
+            url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+        )
+
+        _ = try library.read(url)
+
+        let after = try url.resourceValues(forKeys: [.contentModificationDateKey])
+            .contentModificationDate
+        XCTAssertEqual(before, after)
+    }
+
     func testCreateUsesUniqueUntitledNames() throws {
         let library = try DocumentLibrary(rootURL: root)
 
@@ -100,6 +115,79 @@ final class DocumentLibraryTests: XCTestCase {
         XCTAssertEqual(try reloaded.read(url), "# Persisted")
     }
 
+    func testRenameKeepsContent() throws {
+        let library = try DocumentLibrary(rootURL: root)
+        let url = try library.createDocument()
+        try library.save("contenu", to: url)
+
+        let renamed = try library.rename(url, to: "Journal")
+
+        XCTAssertEqual(renamed.lastPathComponent, "Journal.md")
+        XCTAssertEqual(try library.read(renamed), "contenu")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
+    }
+
+    func testRenameRejectsPathSeparators() throws {
+        let library = try DocumentLibrary(rootURL: root)
+        let url = try library.createDocument()
+
+        let renamed = try library.rename(url, to: "dossier/note:jour")
+
+        XCTAssertEqual(renamed.lastPathComponent, "dossier-note-jour.md")
+    }
+
+    func testRenameToExistingNameGetsUniqueSuffix() throws {
+        let library = try DocumentLibrary(rootURL: root)
+        _ = try library.rename(library.createDocument(), to: "Note")
+
+        let renamed = try library.rename(library.createDocument(), to: "Note")
+
+        XCTAssertEqual(renamed.lastPathComponent, "Note 2.md")
+    }
+
+    func testRenameRejectsEmptyName() throws {
+        let library = try DocumentLibrary(rootURL: root)
+        let url = try library.createDocument()
+
+        XCTAssertThrowsError(try library.rename(url, to: "  \n"))
+    }
+
+    func testMigrationMovesLegacyDocumentsOnce() throws {
+        let legacy = sourceRoot.appendingPathComponent("legacy", isDirectory: true)
+        let destination = sourceRoot.appendingPathComponent("documents", isDirectory: true)
+        try FileManager.default.createDirectory(at: legacy, withIntermediateDirectories: true)
+        try Data("ancienne".utf8).write(to: legacy.appendingPathComponent("note.md"))
+        let suite = "DocumentLibraryTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        try DocumentLibrary.migrateLegacyDocuments(
+            from: legacy,
+            to: destination,
+            fileManager: .default,
+            defaults: defaults
+        )
+        XCTAssertEqual(
+            try String(
+                contentsOf: destination.appendingPathComponent("note.md"),
+                encoding: .utf8
+            ),
+            "ancienne"
+        )
+
+        try FileManager.default.createDirectory(at: legacy, withIntermediateDirectories: true)
+        try Data("tardive".utf8).write(to: legacy.appendingPathComponent("tardive.md"))
+        try DocumentLibrary.migrateLegacyDocuments(
+            from: legacy,
+            to: destination,
+            fileManager: .default,
+            defaults: defaults
+        )
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: legacy.appendingPathComponent("tardive.md").path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: destination.appendingPathComponent("tardive.md").path))
+    }
+
     func testDeleteRemovesOnlyPrivateCopy() throws {
         let library = try DocumentLibrary(rootURL: root)
         let source = sourceRoot.appendingPathComponent("note.md")
@@ -118,5 +206,21 @@ final class DocumentLibraryTests: XCTestCase {
         try Data("outside".utf8).write(to: source)
 
         XCTAssertThrowsError(try library.read(source))
+    }
+
+    func testListingLargeLibraryStaysFast() throws {
+        let library = try DocumentLibrary(rootURL: root)
+        let body = String(repeating: "Lorem ipsum dolor sit amet.\n", count: 2_000)
+        for index in 0..<200 {
+            try Data("# Note \(index)\n\(body)".utf8).write(
+                to: root.appendingPathComponent("note-\(index).md")
+            )
+        }
+        let options = XCTMeasureOptions()
+        options.iterationCount = 3
+
+        measure(metrics: [XCTClockMetric()], options: options) {
+            _ = try? library.documents()
+        }
     }
 }

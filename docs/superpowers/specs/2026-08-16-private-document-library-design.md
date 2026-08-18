@@ -37,7 +37,7 @@ La source de vérité reste le système de fichiers. Aucune base de données ni 
 
 `LibraryView` affiche l’état vide, la liste, le menu d’ajout, le sélecteur d’import et les erreurs compréhensibles par l’utilisateur.
 
-`DocumentEditorView` adapte l’éditeur actuel à un document identifié par son URL privée. Il charge le texte à l’ouverture et demande à `DocumentLibrary` de l’enregistrer après chaque modification. Le moteur de style Markdown et le compteur de mots restent inchangés.
+`DocumentEditorView` adapte l’éditeur actuel à un document identifié par son URL privée. Il charge le texte à l’ouverture et demande à `DocumentLibrary` de l’enregistrer après chaque modification. Le moteur de style Markdown reste inchangé.
 
 ## Gestion des fichiers et erreurs
 
@@ -47,7 +47,7 @@ Les écritures utilisent une opération atomique afin d’éviter un fichier par
 
 ## Persistance et confidentialité
 
-Le dossier de bibliothèque appartient au conteneur privé de SimpleMarkdown. Aucun scan de Fichiers, d’iCloud Drive ou des documents d’autres apps n’est effectué. Les documents persistent entre les lancements et sont inclus dans les sauvegardes normales de l’appareil.
+Le dossier de bibliothèque vit dans le conteneur `Documents` de SimpleMarkdown, exposé via l’app Fichiers grâce à `UIFileSharingEnabled` et `LSSupportsOpeningDocumentsInPlace`. L’app ne scanne jamais Fichiers, iCloud Drive ni les documents d’autres apps : elle ne fait qu’exposer son propre dossier. Les documents persistent entre les lancements et sont inclus dans les sauvegardes normales de l’appareil. Une migration unique déplace les notes préexistantes depuis `Application Support` au premier lancement de la version concernée.
 
 ## Tests
 

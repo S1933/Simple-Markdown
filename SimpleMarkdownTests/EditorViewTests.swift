@@ -4,15 +4,105 @@ import XCTest
 
 @MainActor
 final class EditorViewTests: XCTestCase {
-    func testEmptyDocumentStartsInEditMode() {
-        XCTAssertEqual(DocumentEditorView.initialMode(for: ""), .edit)
-        XCTAssertEqual(DocumentEditorView.initialMode(for: "# Existing"), .preview)
-    }
-
     func testLongDocumentEditorStaysViewportSizedAndScrolls() async throws {
         let text = (1...400).map { "Line \($0)" }.joined(separator: "\n") + "\n"
         let sizes = try await editorSizes(for: text)
         XCTAssertGreaterThan(sizes.content, sizes.bounds)
+    }
+
+    func testEditorUsesBundledMonospacedFont() async throws {
+        let host = UIHostingController(
+            rootView: EditorView(text: .constant("Texte"))
+        )
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+
+        var textView: UITextView?
+        for _ in 0..<40 where textView == nil {
+            try await Task.sleep(for: .milliseconds(50))
+            host.view.layoutIfNeeded()
+            textView = host.view.descendant(of: UITextView.self)
+        }
+
+        XCTAssertEqual(try XCTUnwrap(textView?.font).fontName, "JetBrainsMono-Regular")
+        XCTAssertNotNil(UIFont(name: "JetBrainsMono-Regular", size: 16))
+    }
+
+    func testEditorKeepsProseInputAssistanceAndInteractiveDismissal() async throws {
+        let host = UIHostingController(rootView: EditorView(text: .constant("Texte")))
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+
+        var textView: UITextView?
+        for _ in 0..<40 where textView == nil {
+            try await Task.sleep(for: .milliseconds(50))
+            host.view.layoutIfNeeded()
+            textView = host.view.descendant(of: UITextView.self)
+        }
+        let editor = try XCTUnwrap(textView)
+        XCTAssertEqual(editor.keyboardDismissMode, .interactive)
+        XCTAssertNotEqual(editor.autocorrectionType, .no)
+        XCTAssertNotEqual(editor.autocapitalizationType, .none)
+    }
+
+    func testOpeningDocumentDoesNotTouchModificationDate() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = try DocumentLibrary(rootURL: root)
+        let url = root.appendingPathComponent("note.md")
+        try Data("# Titre\nContenu".utf8).write(to: url)
+        let before = Date(timeIntervalSince1970: 1_700_000_000)
+        try FileManager.default.setAttributes([.modificationDate: before], ofItemAtPath: url.path)
+        let document = try XCTUnwrap(library.documents().first)
+        let host = UIHostingController(
+            rootView: DocumentEditorView(document: document, library: library)
+        )
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+
+        try await Task.sleep(for: .milliseconds(250))
+
+        let after = try XCTUnwrap(
+            url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+        )
+        XCTAssertEqual(after.timeIntervalSince1970, before.timeIntervalSince1970, accuracy: 0.001)
+    }
+
+    func testPendingEditIsFlushedWhenLeavingEditor() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = try DocumentLibrary(rootURL: root)
+        let url = try library.createDocument()
+        let document = try XCTUnwrap(library.documents().first)
+        let host = UIHostingController(
+            rootView: DocumentEditorView(document: document, library: library)
+        )
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+
+        var textView: UITextView?
+        for _ in 0..<40 where textView == nil {
+            try await Task.sleep(for: .milliseconds(50))
+            host.view.layoutIfNeeded()
+            textView = host.view.descendant(of: UITextView.self)
+        }
+        try XCTUnwrap(textView).insertText("urgent")
+        XCTAssertEqual(try library.read(url), "")
+
+        window.rootViewController = UIViewController()
+        try await Task.sleep(for: .milliseconds(100))
+
+        XCTAssertEqual(try library.read(url), "urgent")
     }
 
     func testPreviewRendersWithoutCrashing() async throws {

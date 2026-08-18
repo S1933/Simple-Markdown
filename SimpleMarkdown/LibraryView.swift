@@ -1,57 +1,97 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct LibraryView: View {
     let library: DocumentLibrary
 
     @State private var documents: [LibraryDocument] = []
-    @State private var path: [LibraryDocument] = []
+    @State private var selectedDocument: LibraryDocument?
     @State private var errorMessage: String?
     @State private var searchQuery: String = ""
     @State private var documentContents: [URL: String] = [:]
-    @State private var isLoadingContents = false
+    @State private var indexTask: Task<Void, Never>?
+    @State private var isImporting = false
+    @State private var pendingDeletion: LibraryDocument?
     @FocusState private var isSearchFocused: Bool
 
     var body: some View {
-        NavigationStack(path: $path) {
-            VStack(spacing: 0) {
-                Group {
-                    if documents.isEmpty {
-                        ContentUnavailableView(
-                            "Aucun document",
-                            systemImage: "doc.text",
-                            description: Text("Créez un document Markdown.")
-                        )
-                        .accessibilityElement(children: .contain)
-                        .accessibilityIdentifier("library.empty")
-                    } else if filteredDocuments.isEmpty {
-                        ContentUnavailableView
-                            .search(text: searchQuery)
-                            .accessibilityIdentifier("library.noResults")
-                    } else {
-                        documentList
-                    }
+        NavigationSplitView {
+            sidebar
+        } detail: {
+            if let document = selectedDocument {
+                DocumentEditorView(document: document, library: library)
+                    .id(document.url)
+            } else {
+                ContentUnavailableView(
+                    "Sélectionnez un document",
+                    systemImage: "doc.text",
+                    description: Text("Choisissez une note dans la liste, ou créez-en une nouvelle.")
+                )
+                .accessibilityIdentifier("library.placeholder")
+            }
+        }
+        .alert("Une erreur est survenue", isPresented: hasError) {
+            Button("OK") { errorMessage = nil }
+        } message: {
+            Text(errorMessage ?? "Erreur inconnue")
+        }
+        .fileImporter(
+            isPresented: $isImporting,
+            allowedContentTypes: [.markdown, .plainText]
+        ) { result in
+            importDocument(result)
+        }
+        .confirmationDialog(
+            "Supprimer ce document ?",
+            isPresented: isConfirmingDelete,
+            titleVisibility: .visible
+        ) {
+            Button("Supprimer", role: .destructive) {
+                guard let pendingDeletion else { return }
+                delete(pendingDeletion)
+                self.pendingDeletion = nil
+            }
+            Button("Annuler", role: .cancel) {
+                pendingDeletion = nil
+            }
+        }
+        .task {
+            refresh()
+            scheduleContentsIndex()
+        }
+    }
+
+    private var sidebar: some View {
+        VStack(spacing: 0) {
+            Group {
+                if documents.isEmpty {
+                    ContentUnavailableView(
+                        "Aucun document",
+                        systemImage: "doc.text",
+                        description: Text("Créez un document Markdown.")
+                    )
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("library.empty")
+                } else if filteredDocuments.isEmpty {
+                    ContentUnavailableView
+                        .search(text: searchQuery)
+                        .accessibilityIdentifier("library.noResults")
+                } else {
+                    documentList
                 }
-                if !documents.isEmpty {
-                    searchField
-                        .padding(.horizontal)
-                        .padding(.vertical, 8)
-                }
             }
-            .toolbar { addButton }
-            .onChange(of: searchQuery) { _, _ in
-                ensureContentsLoaded()
+            if !documents.isEmpty {
+                searchField
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
             }
-            .navigationDestination(for: LibraryDocument.self) { document in
-                DocumentEditorView(document: document, library: library) {
-                    refresh()
-                }
-            }
-            .alert("Une erreur est survenue", isPresented: hasError) {
-                Button("OK") { errorMessage = nil }
-            } message: {
-                Text(errorMessage ?? "Erreur inconnue")
-            }
-            .task { refresh() }
+        }
+        .navigationTitle("Bibliothèque")
+        .toolbar { addButton }
+        .onChange(of: selectedDocument) { _, newValue in
+            guard newValue == nil else { return }
+            refresh()
+            scheduleContentsIndex()
         }
     }
 
@@ -78,16 +118,6 @@ struct LibraryView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Effacer")
             }
-            Button {
-                // TODO: recherche vocale
-            } label: {
-                Image(systemName: "mic.fill")
-                    .foregroundStyle(.tint)
-                    .font(.system(size: 16, weight: .semibold))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Recherche vocale")
-            .accessibilityIdentifier("library.voiceSearch")
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -95,31 +125,37 @@ struct LibraryView: View {
     }
 
     private var documentList: some View {
-        List(filteredDocuments) { document in
-            NavigationLink(value: document) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(document.title)
-                    Text(document.modifiedAt, format: .dateTime.day().month().year())
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+        List(filteredDocuments, selection: $selectedDocument) { document in
+            VStack(alignment: .leading, spacing: 4) {
+                Text(document.title)
+                Text(document.modifiedAt, format: .dateTime.day().month().year())
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
+            .tag(document)
             .swipeActions {
                 Button("Supprimer", role: .destructive) {
-                    delete(document)
+                    pendingDeletion = document
                 }
             }
         }
+        .listStyle(.sidebar)
     }
 
     @ToolbarContentBuilder
     private var addButton: some ToolbarContent {
         ToolbarItem(placement: .primaryAction) {
-            Button("Nouveau document", systemImage: "plus") {
-                createDocument()
+            Menu {
+                Button("Nouveau document", systemImage: "doc.badge.plus") {
+                    createDocument()
+                }
+                Button("Importer", systemImage: "square.and.arrow.down") {
+                    isImporting = true
+                }
+            } label: {
+                Image(systemName: "plus")
             }
-            .labelStyle(.iconOnly)
-            .accessibilityLabel("Nouveau document")
+            .accessibilityLabel("Ajouter un document")
             .accessibilityIdentifier("library.add")
         }
     }
@@ -128,6 +164,13 @@ struct LibraryView: View {
         Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
+        )
+    }
+
+    private var isConfirmingDelete: Binding<Bool> {
+        Binding(
+            get: { pendingDeletion != nil },
+            set: { if !$0 { pendingDeletion = nil } }
         )
     }
 
@@ -142,35 +185,41 @@ struct LibraryView: View {
     private var filteredDocuments: [LibraryDocument] {
         guard hasActiveSearch else { return documents }
         return documents.filter { document in
-            guard let content = documentContents[document.url] else { return false }
-            return content.localizedCaseInsensitiveContains(trimmedQuery)
+            LibrarySearch.matches(
+                document,
+                content: documentContents[document.url],
+                query: trimmedQuery
+            )
         }
     }
 
-    private func ensureContentsLoaded() {
-        guard hasActiveSearch, !isLoadingContents, !documents.isEmpty else { return }
-        isLoadingContents = true
+    private func scheduleContentsIndex() {
+        indexTask?.cancel()
+        guard !documents.isEmpty else {
+            indexTask = nil
+            return
+        }
         let snapshot = documents
-        Task.detached(priority: .userInitiated) {
-            var loaded: [URL: String] = [:]
-            for document in snapshot {
-                if let content = try? library.read(document.url) {
-                    loaded[document.url] = content
+        indexTask = Task {
+            let loaded = await Task.detached(priority: .utility) {
+                var loaded: [URL: String] = [:]
+                for document in snapshot {
+                    if let content = try? library.read(document.url) {
+                        loaded[document.url] = content
+                    }
                 }
-            }
-            await MainActor.run {
-                documentContents = loaded
-                isLoadingContents = false
-            }
+                return loaded
+            }.value
+            guard !Task.isCancelled else { return }
+            documentContents = loaded
         }
     }
 
     private func refresh() {
         do {
             documents = try library.documents()
-            if hasActiveSearch {
-                documentContents = [:]
-                ensureContentsLoaded()
+            documentContents = documentContents.filter { key, _ in
+                documents.contains { $0.url == key }
             }
         } catch {
             errorMessage = error.localizedDescription
@@ -186,6 +235,14 @@ struct LibraryView: View {
         }
     }
 
+    private func importDocument(_ result: Result<URL, Error>) {
+        do {
+            try open(library.importDocument(from: result.get()))
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     private func open(_ url: URL) throws {
         documents = try library.documents()
         let targetPath = url.resolvingSymlinksInPath().path
@@ -194,13 +251,16 @@ struct LibraryView: View {
         }) else {
             throw CocoaError(.fileNoSuchFile)
         }
-        path.append(document)
+        selectedDocument = document
     }
 
     private func delete(_ document: LibraryDocument) {
         do {
             try library.delete(document.url)
             documentContents.removeValue(forKey: document.url)
+            if selectedDocument == document {
+                selectedDocument = nil
+            }
             refresh()
         } catch {
             errorMessage = error.localizedDescription
