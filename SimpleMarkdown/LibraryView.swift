@@ -42,6 +42,11 @@ struct LibraryView: View {
         ) { result in
             importDocument(result)
         }
+        .sheet(isPresented: $isPastingText) {
+            PasteMarkdownSheet { text in
+                addFromText(text, suggestedName: "Collé")
+            }
+        }
         .confirmationDialog(
             "Supprimer ce document ?",
             isPresented: isConfirmingDelete,
@@ -186,6 +191,14 @@ struct LibraryView: View {
     private func importDocument(_ result: Result<URL, Error>) {
         do {
             try open(library.importDocument(from: result.get()))
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func addFromText(_ text: String, suggestedName: String) {
+        do {
+            try open(library.add(text: text, suggestedName: suggestedName))
         } catch {
             errorMessage = error.localizedDescription
         }
