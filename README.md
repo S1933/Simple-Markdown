@@ -1,12 +1,12 @@
 # Simple Markdown
 
-Éditeur Markdown minimaliste pour iOS, développé avec SwiftUI.
+Lecteur Markdown minimaliste pour iOS, développé avec SwiftUI.
 
 ## Fonctionnalités
 
-- création et gestion de documents Markdown ;
-- mise en forme Markdown en temps réel ;
-- stockage local des documents ;
+- lecture de documents Markdown mis en forme ;
+- ajout par copier-coller, depuis une URL, ou par import d’un fichier ;
+- stockage local privé des documents ;
 - interface native SwiftUI.
 
 ## Installation
