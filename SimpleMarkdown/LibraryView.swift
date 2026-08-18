@@ -18,13 +18,13 @@ struct LibraryView: View {
             sidebar
         } detail: {
             if let document = selectedDocument {
-                DocumentEditorView(document: document, library: library)
+                DocumentReaderView(document: document, library: library)
                     .id(document.url)
             } else {
                 ContentUnavailableView(
                     "Sélectionnez un document",
                     systemImage: "doc.text",
-                    description: Text("Choisissez une note dans la liste, ou créez-en une nouvelle.")
+                    description: Text("Choisissez une note dans la liste, ou ajoutez-en une nouvelle.")
                 )
                 .accessibilityIdentifier("library.placeholder")
             }
