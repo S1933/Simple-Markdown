@@ -7,12 +7,11 @@ struct LibraryView: View {
     @State private var documents: [LibraryDocument] = []
     @State private var selectedDocument: LibraryDocument?
     @State private var errorMessage: String?
-    @State private var searchQuery: String = ""
-    @State private var documentContents: [URL: String] = [:]
-    @State private var indexTask: Task<Void, Never>?
     @State private var isImporting = false
     @State private var pendingDeletion: LibraryDocument?
-    @FocusState private var isSearchFocused: Bool
+    @State private var isSearching = false
+    @State private var index: SearchIndex?
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     var body: some View {
         NavigationSplitView {
@@ -57,75 +56,58 @@ struct LibraryView: View {
         }
         .task {
             refresh()
-            scheduleContentsIndex()
+            index = SearchIndex(library: library)
         }
+        .fullScreenCover(isPresented: isSearchingFullScreen) { searchView }
+        .sheet(isPresented: isSearchingSheet) { searchView }
+    }
+
+    private var searchView: some View {
+        SearchView(
+            documents: documents,
+            index: index ?? SearchIndex(library: library),
+            onSelect: { selectedDocument = $0 }
+        )
+    }
+
+    private var isSearchingFullScreen: Binding<Bool> {
+        Binding(
+            get: { isSearching && horizontalSizeClass == .compact },
+            set: { isSearching = $0 }
+        )
+    }
+
+    private var isSearchingSheet: Binding<Bool> {
+        Binding(
+            get: { isSearching && horizontalSizeClass != .compact },
+            set: { isSearching = $0 }
+        )
     }
 
     private var sidebar: some View {
-        VStack(spacing: 0) {
-            Group {
-                if documents.isEmpty {
-                    ContentUnavailableView(
-                        "Aucun document",
-                        systemImage: "doc.text",
-                        description: Text("Créez un document Markdown.")
-                    )
-                    .accessibilityElement(children: .contain)
-                    .accessibilityIdentifier("library.empty")
-                } else if filteredDocuments.isEmpty {
-                    ContentUnavailableView
-                        .search(text: searchQuery)
-                        .accessibilityIdentifier("library.noResults")
-                } else {
-                    documentList
-                }
-            }
-            if !documents.isEmpty {
-                searchField
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
+        Group {
+            if documents.isEmpty {
+                ContentUnavailableView(
+                    "Aucun document",
+                    systemImage: "doc.text",
+                    description: Text("Créez un document Markdown.")
+                )
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("library.empty")
+            } else {
+                documentList
             }
         }
         .navigationTitle("Bibliothèque")
-        .toolbar { addButton }
+        .toolbar { toolbarItems }
         .onChange(of: selectedDocument) { _, newValue in
             guard newValue == nil else { return }
             refresh()
-            scheduleContentsIndex()
         }
-    }
-
-    private var searchField: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
-                .font(.system(size: 16, weight: .semibold))
-            TextField("Rechercher", text: $searchQuery)
-                .textFieldStyle(.plain)
-                .focused($isSearchFocused)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .submitLabel(.search)
-                .accessibilityIdentifier("library.search")
-            if !searchQuery.isEmpty {
-                Button {
-                    searchQuery = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.tertiary)
-                        .font(.system(size: 16))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Effacer")
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
     private var documentList: some View {
-        List(filteredDocuments, selection: $selectedDocument) { document in
+        List(documents, selection: $selectedDocument) { document in
             VStack(alignment: .leading, spacing: 4) {
                 Text(document.title)
                 Text(document.modifiedAt, format: .dateTime.day().month().year())
@@ -143,7 +125,7 @@ struct LibraryView: View {
     }
 
     @ToolbarContentBuilder
-    private var addButton: some ToolbarContent {
+    private var toolbarItems: some ToolbarContent {
         ToolbarItem(placement: .primaryAction) {
             Menu {
                 Button("Nouveau document", systemImage: "doc.badge.plus") {
@@ -157,6 +139,15 @@ struct LibraryView: View {
             }
             .accessibilityLabel("Ajouter un document")
             .accessibilityIdentifier("library.add")
+        }
+        ToolbarItem(placement: .primaryAction) {
+            CircularToolbarButton(
+                systemImage: "magnifyingglass",
+                accessibilityLabel: "Rechercher"
+            ) {
+                isSearching = true
+            }
+            .accessibilityIdentifier("library.search-button")
         }
     }
 
@@ -174,53 +165,9 @@ struct LibraryView: View {
         )
     }
 
-    private var trimmedQuery: String {
-        searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private var hasActiveSearch: Bool {
-        !trimmedQuery.isEmpty
-    }
-
-    private var filteredDocuments: [LibraryDocument] {
-        guard hasActiveSearch else { return documents }
-        return documents.filter { document in
-            LibrarySearch.matches(
-                document,
-                content: documentContents[document.url],
-                query: trimmedQuery
-            )
-        }
-    }
-
-    private func scheduleContentsIndex() {
-        indexTask?.cancel()
-        guard !documents.isEmpty else {
-            indexTask = nil
-            return
-        }
-        let snapshot = documents
-        indexTask = Task {
-            let loaded = await Task.detached(priority: .utility) {
-                var loaded: [URL: String] = [:]
-                for document in snapshot {
-                    if let content = try? library.read(document.url) {
-                        loaded[document.url] = content
-                    }
-                }
-                return loaded
-            }.value
-            guard !Task.isCancelled else { return }
-            documentContents = loaded
-        }
-    }
-
     private func refresh() {
         do {
             documents = try library.documents()
-            documentContents = documentContents.filter { key, _ in
-                documents.contains { $0.url == key }
-            }
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -257,7 +204,6 @@ struct LibraryView: View {
     private func delete(_ document: LibraryDocument) {
         do {
             try library.delete(document.url)
-            documentContents.removeValue(forKey: document.url)
             if selectedDocument == document {
                 selectedDocument = nil
             }
