@@ -143,12 +143,6 @@ nonisolated struct DocumentLibrary: @unchecked Sendable {
             }
     }
 
-    func createDocument() throws -> URL {
-        let url = uniqueURL(stem: "Sans titre", pathExtension: "md")
-        try Data().write(to: url, options: .atomic)
-        return url
-    }
-
     func read(_ url: URL) throws -> String {
         let url = try managedURL(url)
         let data = try Data(contentsOf: url)
@@ -180,28 +174,6 @@ nonisolated struct DocumentLibrary: @unchecked Sendable {
             : "md"
         let destination = uniqueURL(stem: stem, pathExtension: destinationExtension)
         try fileManager.copyItem(at: source, to: destination)
-        return destination
-    }
-
-    func save(_ text: String, to url: URL) throws {
-        let url = try managedURL(url)
-        try Data(text.utf8).write(to: url, options: .atomic)
-    }
-
-    func rename(_ url: URL, to newName: String) throws -> URL {
-        let url = try managedURL(url)
-        let sanitized = newName
-            .replacingOccurrences(of: "/", with: "-")
-            .replacingOccurrences(of: ":", with: "-")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !sanitized.isEmpty else {
-            throw CocoaError(.fileWriteInvalidFileName)
-        }
-        guard sanitized != url.deletingPathExtension().lastPathComponent else {
-            return url
-        }
-        let destination = uniqueURL(stem: sanitized, pathExtension: url.pathExtension)
-        try fileManager.moveItem(at: url, to: destination)
         return destination
     }
 

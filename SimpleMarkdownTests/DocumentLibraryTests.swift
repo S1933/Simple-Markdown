@@ -70,26 +70,14 @@ final class DocumentLibraryTests: XCTestCase {
         XCTAssertEqual(before, after)
     }
 
-    func testCreateUsesUniqueUntitledNames() throws {
-        let library = try DocumentLibrary(rootURL: root)
-
-        let first = try library.createDocument()
-        let second = try library.createDocument()
-
-        XCTAssertEqual(first.lastPathComponent, "Sans titre.md")
-        XCTAssertEqual(second.lastPathComponent, "Sans titre 2.md")
-        XCTAssertEqual(try library.read(first), "")
-    }
-
     func testImportCopiesWithoutChangingSource() throws {
         let library = try DocumentLibrary(rootURL: root)
         let source = sourceRoot.appendingPathComponent("note.md")
         try Data("original".utf8).write(to: source)
 
         let imported = try library.importDocument(from: source)
-        try library.save("edited", to: imported)
 
-        XCTAssertEqual(try library.read(imported), "edited")
+        XCTAssertEqual(try library.read(imported), "original")
         XCTAssertEqual(try String(contentsOf: source, encoding: .utf8), "original")
     }
 
@@ -103,53 +91,6 @@ final class DocumentLibraryTests: XCTestCase {
 
         XCTAssertEqual(first.lastPathComponent, "note.md")
         XCTAssertEqual(second.lastPathComponent, "note 2.md")
-    }
-
-    func testSavePersistsAfterLibraryReload() throws {
-        let library = try DocumentLibrary(rootURL: root)
-        let url = try library.createDocument()
-        try library.save("# Persisted", to: url)
-
-        let reloaded = try DocumentLibrary(rootURL: root)
-
-        XCTAssertEqual(try reloaded.read(url), "# Persisted")
-    }
-
-    func testRenameKeepsContent() throws {
-        let library = try DocumentLibrary(rootURL: root)
-        let url = try library.createDocument()
-        try library.save("contenu", to: url)
-
-        let renamed = try library.rename(url, to: "Journal")
-
-        XCTAssertEqual(renamed.lastPathComponent, "Journal.md")
-        XCTAssertEqual(try library.read(renamed), "contenu")
-        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
-    }
-
-    func testRenameRejectsPathSeparators() throws {
-        let library = try DocumentLibrary(rootURL: root)
-        let url = try library.createDocument()
-
-        let renamed = try library.rename(url, to: "dossier/note:jour")
-
-        XCTAssertEqual(renamed.lastPathComponent, "dossier-note-jour.md")
-    }
-
-    func testRenameToExistingNameGetsUniqueSuffix() throws {
-        let library = try DocumentLibrary(rootURL: root)
-        _ = try library.rename(library.createDocument(), to: "Note")
-
-        let renamed = try library.rename(library.createDocument(), to: "Note")
-
-        XCTAssertEqual(renamed.lastPathComponent, "Note 2.md")
-    }
-
-    func testRenameRejectsEmptyName() throws {
-        let library = try DocumentLibrary(rootURL: root)
-        let url = try library.createDocument()
-
-        XCTAssertThrowsError(try library.rename(url, to: "  \n"))
     }
 
     func testMigrationMovesLegacyDocumentsOnce() throws {

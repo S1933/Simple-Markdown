@@ -128,9 +128,6 @@ struct LibraryView: View {
     private var toolbarItems: some ToolbarContent {
         ToolbarItem(placement: .primaryAction) {
             Menu {
-                Button("Nouveau document", systemImage: "doc.badge.plus") {
-                    createDocument()
-                }
                 Button("Importer", systemImage: "square.and.arrow.down") {
                     isImporting = true
                 }
@@ -168,15 +165,6 @@ struct LibraryView: View {
     private func refresh() {
         do {
             documents = try library.documents()
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-
-    private func createDocument() {
-        do {
-            let url = try library.createDocument()
-            try open(url)
         } catch {
             errorMessage = error.localizedDescription
         }
