@@ -6,7 +6,7 @@ protocol URLSessionProtocol: Sendable {
 
 extension URLSession: URLSessionProtocol {}
 
-struct RemoteMarkdownLoader: Sendable {
+nonisolated struct RemoteMarkdownLoader: Sendable {
     enum LoadError: Error, Equatable {
         case insecureScheme
         case unsupportedContentType

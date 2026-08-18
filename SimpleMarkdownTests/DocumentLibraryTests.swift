@@ -166,6 +166,7 @@ final class DocumentLibraryTests: XCTestCase {
     }
 
     func testAddCreatesFileNamedFromHeading() throws {
+        let library = try DocumentLibrary(rootURL: root)
         let url = try library.add(text: "# Hello\nBody", suggestedName: "ignored.md")
 
         XCTAssertEqual(url.lastPathComponent, "Hello.md")
@@ -173,12 +174,14 @@ final class DocumentLibraryTests: XCTestCase {
     }
 
     func testAddFallsBackToSuggestedNameWithoutHeading() throws {
+        let library = try DocumentLibrary(rootURL: root)
         let url = try library.add(text: "plain text", suggestedName: "notes.md")
 
         XCTAssertEqual(url.lastPathComponent, "notes.md")
     }
 
     func testAddNeverOverwritesAnExistingDocument() throws {
+        let library = try DocumentLibrary(rootURL: root)
         let first = try library.add(text: "# Same", suggestedName: "same.md")
         let second = try library.add(text: "# Same", suggestedName: "same.md")
 
@@ -187,6 +190,7 @@ final class DocumentLibraryTests: XCTestCase {
     }
 
     func testAddRejectsEmptyText() throws {
+        let library = try DocumentLibrary(rootURL: root)
         XCTAssertThrowsError(try library.add(text: "   ", suggestedName: "empty.md"))
     }
 }

@@ -1,5 +1,6 @@
 import XCTest
 
+@MainActor
 final class DocumentReaderUITests: XCTestCase {
     func testEditorSurfaceNoLongerExists() {
         let app = XCUIApplication()
@@ -15,14 +16,11 @@ final class DocumentReaderUITests: XCTestCase {
 
     func testPasteAddsAndOpensADocument() {
         let app = XCUIApplication()
-        app.launchArguments = ["--ui-testing"]
+        app.launchArguments = ["--ui-testing", "--ui-testing-paste=# Pasted note\nBody text"]
         app.launch()
-
-        UIPasteboard.general.string = "# Pasted note\nBody text"
 
         app.buttons["library.add"].tap()
         app.buttons["Coller le texte"].tap()
-        app.buttons["paste.trigger"].tap()
         app.buttons["paste.confirm"].tap()
 
         XCTAssertTrue(app.navigationBars["Pasted note"].waitForExistence(timeout: 5))

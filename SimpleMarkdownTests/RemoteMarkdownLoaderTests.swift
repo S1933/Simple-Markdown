@@ -2,8 +2,8 @@ import XCTest
 @testable import SimpleMarkdown
 
 private final class StubSession: URLSessionProtocol {
-    var response: (Data, URLResponse)?
-    var error: Error?
+    nonisolated(unsafe) var response: (Data, URLResponse)?
+    nonisolated(unsafe) var error: Error?
 
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
         if let error { throw error }
@@ -19,10 +19,12 @@ final class RemoteMarkdownLoaderTests: XCTestCase {
             XCTFail("expected rejection")
         } catch RemoteMarkdownLoader.LoadError.insecureScheme {
             // expected
+        } catch {
+            XCTFail("unexpected error: \(error)")
         }
     }
 
-    func testRewritesGitHubBlobURLsToRaw() async {
+    func testRewritesGitHubBlobURLsToRaw() async throws {
         let session = StubSession()
         session.response = (
             Data("# Title".utf8),
@@ -55,6 +57,8 @@ final class RemoteMarkdownLoaderTests: XCTestCase {
             XCTFail("expected rejection")
         } catch RemoteMarkdownLoader.LoadError.unsupportedContentType {
             // expected
+        } catch {
+            XCTFail("unexpected error: \(error)")
         }
     }
 
@@ -76,6 +80,8 @@ final class RemoteMarkdownLoaderTests: XCTestCase {
             XCTFail("expected rejection")
         } catch RemoteMarkdownLoader.LoadError.tooLarge {
             // expected
+        } catch {
+            XCTFail("unexpected error: \(error)")
         }
     }
 
@@ -96,6 +102,8 @@ final class RemoteMarkdownLoaderTests: XCTestCase {
             XCTFail("expected rejection")
         } catch RemoteMarkdownLoader.LoadError.serverError(let status) {
             XCTAssertEqual(status, 404)
+        } catch {
+            XCTFail("unexpected error: \(error)")
         }
     }
 }

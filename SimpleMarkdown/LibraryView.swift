@@ -70,16 +70,20 @@ struct LibraryView: View {
             refresh()
             index = SearchIndex(library: library)
         }
-        .fullScreenCover(isPresented: isSearchingFullScreen) { searchView }
-        .sheet(isPresented: isSearchingSheet) { searchView }
-    }
-
-    private var searchView: some View {
-        SearchView(
-            documents: documents,
-            index: index ?? SearchIndex(library: library),
-            onSelect: { selectedDocument = $0 }
-        )
+        .fullScreenCover(isPresented: isSearchingFullScreen) {
+            SearchView(
+                documents: documents,
+                index: index ?? SearchIndex(library: library),
+                onSelect: { selectedDocument = $0 }
+            )
+        }
+        .sheet(isPresented: isSearchingSheet) {
+            SearchView(
+                documents: documents,
+                index: index ?? SearchIndex(library: library),
+                onSelect: { selectedDocument = $0 }
+            )
+        }
     }
 
     private var isSearchingFullScreen: Binding<Bool> {

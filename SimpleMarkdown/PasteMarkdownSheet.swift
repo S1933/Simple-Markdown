@@ -4,7 +4,13 @@ struct PasteMarkdownSheet: View {
     let onAdd: (String) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var pastedText = ""
+    @State private var pastedText: String
+
+    init(onAdd: @escaping (String) -> Void) {
+        self.onAdd = onAdd
+        let injected = PasteMarkdownSheet.testPasteText()
+        _pastedText = State(initialValue: injected)
+    }
 
     var body: some View {
         NavigationStack {
@@ -44,5 +50,13 @@ struct PasteMarkdownSheet: View {
                 }
             }
         }
+    }
+
+    private static func testPasteText() -> String {
+        let args = ProcessInfo.processInfo.arguments
+        guard let flag = args.first(where: { $0.hasPrefix("--ui-testing-paste=") }) else {
+            return ""
+        }
+        return String(flag.dropFirst("--ui-testing-paste=".count))
     }
 }
