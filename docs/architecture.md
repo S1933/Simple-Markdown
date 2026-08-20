@@ -26,7 +26,7 @@ SimpleMarkdown/
 ├── LibraryView.swift            # NavigationSplitView sidebar; + menu; search; delete
 ├── PasteMarkdownSheet.swift     # Add via auto-paste / PasteButton → add(text:suggestedName:"Pasted")
 ├── URLImportSheet.swift         # Add via HTTPS URL → RemoteMarkdownLoader → add(text:)
-├── RemoteMarkdownLoader.swift   # HTTPS streamed fetch + validation; GitHub blob → raw rewrite
+├── RemoteMarkdownLoader.swift   # HTTPS chunked fetch + validation; GitHub blob → raw rewrite
 ├── MarkdownPreviewView.swift    # Markdown(text) wrapped in ScrollView with theme
 ├── MarkdownPreviewTheme.swift   # MarkdownUI theme (typography, spacing)
 ├── EditorTheme.swift            # Layout constants (maxLineWidth, padding)
