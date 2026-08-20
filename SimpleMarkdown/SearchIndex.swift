@@ -64,6 +64,7 @@ actor SearchIndex {
     }
 
     private func prune(keeping documents: [LibraryDocument]) {
+        guard entries.count > documents.count else { return }
         let alive = Set(documents.map(\.url))
         entries = entries.filter { alive.contains($0.key) }
     }
