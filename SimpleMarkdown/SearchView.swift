@@ -40,7 +40,7 @@ struct SearchView: View {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
                 .font(.system(size: 16, weight: .semibold))
-            TextField("Rechercher dans les documents", text: $query)
+            TextField("Search documents", text: $query)
                 .textFieldStyle(.plain)
                 .focused($isFocused)
                 .autocorrectionDisabled()
@@ -56,7 +56,7 @@ struct SearchView: View {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(query.isEmpty ? "Fermer" : "Effacer")
+            .accessibilityLabel(query.isEmpty ? "Close" : "Clear")
             .accessibilityIdentifier("search.clear")
         }
         .padding(.horizontal, 14)
@@ -119,7 +119,12 @@ struct SearchView: View {
         searchTask = Task {
             try? await Task.sleep(for: .milliseconds(200))
             guard !Task.isCancelled else { return }
-            let found = await index.results(for: parsed, in: documents)
+            let found: [SearchResult]
+            do {
+                found = try await index.results(for: parsed, in: documents)
+            } catch {
+                return
+            }
             guard !Task.isCancelled else { return }
             results = found
             phase = found.isEmpty ? .empty : .results

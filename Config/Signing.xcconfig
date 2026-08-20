@@ -1,0 +1,6 @@
+# Local-only signing override. Create a copy named `Signing.local.xcconfig`
+# with your team ID (the .local suffix is git-ignored). The project leaves
+# DEVELOPMENT_TEAM empty by default so the command-line override from CI wins.
+
+DEVELOPMENT_TEAM =
+CODE_SIGN_STYLE = Automatic

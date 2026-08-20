@@ -1,10 +1,30 @@
 import Foundation
 
 protocol URLSessionProtocol: Sendable {
-    func data(for request: URLRequest) async throws -> (Data, URLResponse)
+    func stream(
+        for request: URLRequest
+    ) async throws -> (AsyncThrowingStream<UInt8, Error>, URLResponse)
 }
 
-extension URLSession: URLSessionProtocol {}
+extension URLSession: URLSessionProtocol {
+    func stream(
+        for request: URLRequest
+    ) async throws -> (AsyncThrowingStream<UInt8, Error>, URLResponse) {
+        let (bytes, response) = try await self.bytes(for: request)
+        let stream = AsyncThrowingStream<UInt8, Error> { continuation in
+            let task = Task {
+                do {
+                    for try await byte in bytes { continuation.yield(byte) }
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+        return (stream, response)
+    }
+}
 
 nonisolated struct RemoteMarkdownLoader: Sendable {
     enum LoadError: Error, Equatable {
@@ -33,28 +53,44 @@ nonisolated struct RemoteMarkdownLoader: Sendable {
         var request = URLRequest(url: Self.normalized(url))
         request.timeoutInterval = Self.timeout
 
-        let (data, response) = try await session.data(for: request)
+        let (bytes, response) = try await session.stream(for: request)
         guard let http = response as? HTTPURLResponse else {
             throw LoadError.invalidResponse
         }
         guard (200...299).contains(http.statusCode) else {
             throw LoadError.serverError(http.statusCode)
         }
-        if let contentType = http.value(forHTTPHeaderField: "Content-Type") {
-            let isTextual = Self.acceptablePrefixes.contains { contentType.hasPrefix($0) }
-            guard isTextual else { throw LoadError.unsupportedContentType }
-        }
-        guard data.count <= Self.maxBytes else {
+        guard Self.isTextual(http) else { throw LoadError.unsupportedContentType }
+        if http.expectedContentLength > Int64(Self.maxBytes) {
             throw LoadError.tooLarge
         }
+
+        var data = Data()
+        data.reserveCapacity(min(max(Int(http.expectedContentLength), 0), Self.maxBytes))
+        for try await byte in bytes {
+            data.append(byte)
+            guard data.count <= Self.maxBytes else { throw LoadError.tooLarge }
+        }
+
         guard let text = String(data: data, encoding: .utf8) else {
             throw LoadError.invalidResponse
         }
         return text
     }
 
-    /// Rewrites GitHub "blob" view URLs (and gist pages) to their raw content
-    /// counterpart so we fetch Markdown text instead of an HTML page.
+    /// Une réponse sans `Content-Type` est refusée : l'ancien `if let`
+    /// laissait passer toute réponse sans en-tête, ce qui contredit le
+    /// contrat texte de l'import.
+    private static func isTextual(_ response: HTTPURLResponse) -> Bool {
+        guard let contentType = response
+            .value(forHTTPHeaderField: "Content-Type")?
+            .lowercased() else { return false }
+        return acceptablePrefixes.contains { contentType.hasPrefix($0) }
+    }
+
+    /// Rewrites `github.com/<owner>/<repo>/blob/<branch>/<path>` to its
+    /// raw counterpart so we fetch Markdown text instead of an HTML page.
+    /// Gists are not handled.
     static func normalized(_ url: URL) -> URL {
         guard url.host == "github.com",
               url.pathComponents.count > 4,
@@ -72,3 +108,46 @@ nonisolated struct RemoteMarkdownLoader: Sendable {
         ) ?? url
     }
 }
+
+#if DEBUG
+extension RemoteMarkdownLoader {
+    /// Construit un loader qui ignore le réseau et renvoie le texte passé
+    /// via `--ui-testing-url-text=…`. Sans le flag, retombe sur la session
+    /// partagée pour ne pas casser les autres tests UI.
+    static func configured() -> Self {
+        let prefix = "--ui-testing-url-text="
+        guard let flag = ProcessInfo.processInfo.arguments
+            .first(where: { $0.hasPrefix(prefix) }) else {
+            return Self()
+        }
+        return Self(session: UIStubSession(
+            text: String(flag.dropFirst(prefix.count))
+        ))
+    }
+}
+
+private final class UIStubSession: URLSessionProtocol {
+    let text: String
+
+    init(text: String) {
+        self.text = text
+    }
+
+    func stream(
+        for request: URLRequest
+    ) async throws -> (AsyncThrowingStream<UInt8, Error>, URLResponse) {
+        let data = Data(text.utf8)
+        let response = HTTPURLResponse(
+            url: request.url ?? URL(string: "https://example.com/")!,
+            statusCode: 200,
+            httpVersion: "HTTP/1.1",
+            headerFields: ["Content-Type": "text/markdown"]
+        )!
+        let stream = AsyncThrowingStream<UInt8, Error> { continuation in
+            for byte in data { continuation.yield(byte) }
+            continuation.finish()
+        }
+        return (stream, response)
+    }
+}
+#endif

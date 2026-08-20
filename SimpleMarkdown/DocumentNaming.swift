@@ -1,10 +1,15 @@
 import Foundation
 
 nonisolated enum DocumentNaming {
+    /// Filename fallback used when neither heading nor suggestion yields a
+    /// stem. Deliberately **not localized**: filenames on disk must stay
+    /// stable across device language changes.
+    static let untitled = "Untitled"
+
     private static let maxLength = 120
 
     static func name(forText text: String, suggestion: String?, fallback: String) -> String {
-        if let heading = firstHeading(in: text) {
+        if let heading = MarkdownMetadata.title(from: text) {
             return sanitize(heading)
         }
         if let suggestion, !suggestion.isEmpty {
@@ -16,22 +21,12 @@ nonisolated enum DocumentNaming {
         return sanitize(fallback)
     }
 
-    private static func firstHeading(in text: String) -> String? {
-        for rawLine in text.components(separatedBy: .newlines) {
-            let line = rawLine.trimmingCharacters(in: .whitespaces)
-            guard line.hasPrefix("#") else { continue }
-            let heading = line.drop(while: { $0 == "#" }).trimmingCharacters(in: .whitespaces)
-            return heading.isEmpty ? nil : heading
-        }
-        return nil
-    }
-
     private static func sanitize(_ raw: String) -> String {
         let cleaned = raw
             .replacingOccurrences(of: "/", with: "-")
             .replacingOccurrences(of: ":", with: "-")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let truncated = String(cleaned.prefix(maxLength))
-        return truncated.isEmpty ? "Sans titre" : truncated
+        return truncated.isEmpty ? untitled : truncated
     }
 }

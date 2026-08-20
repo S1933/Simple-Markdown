@@ -150,7 +150,7 @@ nonisolated struct DocumentLibrary: @unchecked Sendable {
         let stem = DocumentNaming.name(
             forText: text,
             suggestion: suggestedName,
-            fallback: "Sans titre"
+            fallback: DocumentNaming.untitled
         )
         let url = uniqueURL(stem: stem, pathExtension: "md")
         try Data(text.utf8).write(to: url, options: .atomic)
@@ -167,6 +167,52 @@ nonisolated struct DocumentLibrary: @unchecked Sendable {
             return text
         }
         throw CocoaError(.fileReadInapplicableStringEncoding)
+    }
+
+    /// Reads at most `maxBytes` octets from disk. The trailing slice is trimmed
+    /// back to the last complete UTF-8 scalar so the index never accumulates
+    /// U+FFFD. Decoding falls back the same way as `read(_:)`, with `String(...)`
+    /// as the last resort for files that are neither UTF-8 nor Latin-1.
+    func readPrefix(_ url: URL, maxBytes: Int) throws -> String {
+        let url = try managedURL(url)
+        guard let handle = try? FileHandle(forReadingFrom: url) else {
+            throw CocoaError(.fileReadNoSuchFile)
+        }
+        defer { try? handle.close() }
+        let data = (try handle.read(upToCount: maxBytes)) ?? Data()
+        return Self.decode(Self.droppingPartialScalar(data))
+    }
+
+    private static func decode(_ data: Data) -> String {
+        if let text = String(data: data, encoding: .utf8) { return text }
+        if let text = String(data: data, encoding: .isoLatin1) { return text }
+        return String(decoding: data, as: UTF8.self)
+    }
+
+    /// Trims a trailing slice that lands inside a multi-byte UTF-8 scalar.
+    /// Returns the input untouched when the final byte sequence is complete.
+    private static func droppingPartialScalar(_ data: Data) -> Data {
+        guard !data.isEmpty else { return data }
+        var index = data.endIndex
+        var continuations = 0
+        while index > data.startIndex, continuations < 3 {
+            let previous = data.index(before: index)
+            let byte = data[previous]
+            if byte & 0b1100_0000 == 0b1000_0000 {
+                index = previous
+                continuations += 1
+                continue
+            }
+            let expected: Int
+            switch byte {
+            case 0x00...0x7F: expected = 1
+            case 0xC0...0xDF: expected = 2
+            case 0xE0...0xEF: expected = 3
+            default: expected = 4
+            }
+            return expected == continuations + 1 ? data : data[data.startIndex..<previous]
+        }
+        return data
     }
 
     func importDocument(from source: URL) throws -> URL {
@@ -224,17 +270,8 @@ nonisolated struct DocumentLibrary: @unchecked Sendable {
     }
 
     private func title(for url: URL) -> String {
-        guard let handle = try? FileHandle(forReadingFrom: url) else {
-            return url.lastPathComponent
-        }
-        defer { try? handle.close() }
-        let head = (try? handle.read(upToCount: 4096)) ?? Data()
-        let firstLine = head.prefix(while: { $0 != 0x0A })
-        let line = String(decoding: firstLine, as: UTF8.self)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let title = line.drop(while: { $0 == "#" })
-            .trimmingCharacters(in: .whitespaces)
-        return title.isEmpty ? url.lastPathComponent : title
+        let head = (try? readPrefix(url, maxBytes: 4096)) ?? ""
+        return MarkdownMetadata.title(from: head) ?? url.lastPathComponent
     }
 
     private func managedURL(_ url: URL) throws -> URL {

@@ -20,16 +20,16 @@ struct DocumentReaderView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 ShareLink(item: document.url) {
-                    Label("Partager", systemImage: "square.and.arrow.up")
+                    Label("Share", systemImage: "square.and.arrow.up")
                 }
                 .accessibilityIdentifier("document.share")
             }
         }
         .task { load() }
-        .alert("Impossible d’ouvrir ce document", isPresented: hasError) {
+        .alert("Couldn't open this document", isPresented: hasError) {
             Button("OK") { errorMessage = nil }
         } message: {
-            Text(errorMessage ?? "Erreur inconnue")
+            Text(errorMessage ?? "Unknown error")
         }
     }
 
@@ -42,10 +42,17 @@ struct DocumentReaderView: View {
 
     private func load() {
         guard text == nil else { return }
-        do {
-            text = try library.read(document.url)
-        } catch {
-            errorMessage = error.localizedDescription
+        let library = library
+        let url = document.url
+        Task {
+            do {
+                let value = try await Task.detached(priority: .userInitiated) {
+                    try library.read(url)
+                }.value
+                text = value
+            } catch {
+                errorMessage = error.localizedDescription
+            }
         }
     }
 }

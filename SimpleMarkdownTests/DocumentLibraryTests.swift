@@ -193,4 +193,52 @@ final class DocumentLibraryTests: XCTestCase {
         let library = try DocumentLibrary(rootURL: root)
         XCTAssertThrowsError(try library.add(text: "   ", suggestedName: "empty.md"))
     }
+
+    func testReadPrefixStopsAtTheByteLimit() throws {
+        let library = try DocumentLibrary(rootURL: root)
+        let url = try library.add(
+            text: String(repeating: "a", count: 100_000),
+            suggestedName: "gros"
+        )
+        let prefix = try library.readPrefix(url, maxBytes: 1024)
+        XCTAssertEqual(prefix.utf8.count, 1024)
+    }
+
+    func testReadPrefixNeverSplitsAMultiByteScalar() throws {
+        let library = try DocumentLibrary(rootURL: root)
+        let url = try library.add(
+            text: String(repeating: "é", count: 1_000),
+            suggestedName: "accents"
+        )
+        let prefix = try library.readPrefix(url, maxBytes: 1001)
+        XCTAssertFalse(prefix.unicodeScalars.contains("\u{FFFD}"))
+        XCTAssertEqual(prefix.utf8.count, 1000)
+    }
+
+    func testReadPrefixRejectsURLsOutsideTheLibrary() throws {
+        let library = try DocumentLibrary(rootURL: root)
+        let outside = sourceRoot.appendingPathComponent("hors.md")
+        try Data("x".utf8).write(to: outside)
+        XCTAssertThrowsError(try library.readPrefix(outside, maxBytes: 16))
+    }
+
+    func testDisplayedTitleMatchesTheDerivedFileName() throws {
+        let library = try DocumentLibrary(rootURL: root)
+        let url = try library.add(
+            text: "---\ntitle: Front\n---\n# Heading",
+            suggestedName: "Pasted"
+        )
+        XCTAssertEqual(url.deletingPathExtension().lastPathComponent, "Heading")
+        let document = try XCTUnwrap(library.documents().first { $0.url == url })
+        XCTAssertEqual(document.title, "Heading")
+    }
+
+    func testTitleSkipsHeadingHiddenInsideFrontMatter() throws {
+        let library = try DocumentLibrary(rootURL: root)
+        try Data(
+            "---\ntitle: Front\n---\nCorps sans titre.".utf8
+        ).write(to: root.appendingPathComponent("front.md"))
+        let document = try XCTUnwrap(library.documents().first)
+        XCTAssertEqual(document.title, "Front")
+    }
 }

@@ -21,27 +21,35 @@ SimpleMarkdown — a minimalist, **read-only** Markdown reader for iOS built wit
 | `SimpleMarkdownTests/` | XCTest unit tests |
 | `SimpleMarkdownUITests/` | XCUITest UI tests |
 | `docs/` | `architecture.md` + `superpowers/` (specs, plans) |
-| `README.md` | User-facing overview (French) |
+| `README.md` | User-facing overview |
 
 ## Build & test
 
-Open `SimpleMarkdown.xcodeproj` in Xcode. There is no command-line build pipeline in the repo; agents without a macOS/Xcode environment cannot compile or run tests.
+Open `SimpleMarkdown.xcodeproj` in Xcode. The shared scheme `SimpleMarkdown` is at `SimpleMarkdown.xcodeproj/xcshareddata/xcschemes/SimpleMarkdown.xcscheme` and includes both `SimpleMarkdownTests` and `SimpleMarkdownUITests`.
 
-- Build: `⌘R` on an iOS simulator target
-- Test: `⌘U` (unit + UI tests)
-- UI tests require launching with the `--ui-testing` argument so `DocumentLibrary.uiTesting()` is used; `--ui-testing-library-failure` (DEBUG) forces the startup-error view
+- Build: `⌘R` on an iOS simulator target (Xcode), or
+  ```sh
+  xcodebuild test \
+    -project SimpleMarkdown.xcodeproj -scheme SimpleMarkdown \
+    -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+    CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO DEVELOPMENT_TEAM=
+  ```
+- Test: `⌘U` in Xcode, or the `xcodebuild test` command above. CI runs it on every push to `main` and every pull request (`.github/workflows/ci.yml`).
+- UI tests require launching with the `--ui-testing` argument so `DocumentLibrary.uiTesting()` is used; `--ui-testing-library-failure` (DEBUG) forces the startup-error view. Pass args via `xcodebuild ... -args --ui-testing` or through the scheme's *Arguments Passed On Launch*.
 
 If you cannot run Xcode, say so explicitly and do not claim verification.
 
 ## Conventions
 
-- **Read-only library**: never add editing, renaming, or export surfaces. The only write APIs on `DocumentLibrary` are `add(text:suggestedName:)`, `importDocument(from:)`, and `delete(_:)`.
-- **System boundary**: `DocumentLibrary` is the sole wrapper over `FileManager`. Do not touch the file system directly from views.
-- **Naming**: all three import sources must converge through `DocumentNaming.name(forText:suggestion:fallback:)`. Never bypass it.
+- **Read-only library**: never add editing, renaming, or export surfaces. The only permitted export is `ShareLink(item:)` in the reader toolbar; do not extend it. The only write APIs on `DocumentLibrary` are `add(text:suggestedName:)`, `importDocument(from:)`, and `delete(_:)`.
+- **System boundary**: `DocumentLibrary` is the sole wrapper over `FileManager`. Do not touch the file system directly from views. Use `DocumentLibrary.readPrefix(_:maxBytes:)` for any indexed read.
+- **Naming**: all three import sources must converge through `DocumentNaming.name(forText:suggestion:fallback:)`. The fallback stem is `DocumentNaming.untitled` and must stay stable (not localized) so on-disk filenames survive device-language changes.
+- **Title metadata**: `DocumentNaming` and `DocumentLibrary.title(for:)` both delegate to `MarkdownMetadata.title(from:)`. Front matter is ignored, code fences are skipped.
 - **Sendable**: value types are `nonisolated` / `Sendable`; `SearchIndex` is an `actor`. Keep new model types `Sendable`.
-- **UI strings are French** (e.g. `"Coller le texte"`, `"Sans titre"`, `"Bibliothèque"`). Match existing locale when adding strings.
+- **UI strings are English** (e.g. `"Paste text"`, `"From a URL"`, `"Library"`). Use `Text("…")` so future localization comes via `Localizable.xcstrings`. Never localize a filename.
+- **Search qualifiers**: `title:`, `content:`, `modified:`. French forms (`titre`, `contenu`, `modifie`) remain accepted as aliases for previously saved recent searches.
 - **Accessibility identifiers** follow `dot.path` style (e.g. `library.add`, `search.field`, `document.share`). Reuse the pattern for new controls.
-- **Tests**: add or update XCTest cases for any logic change in `DocumentLibrary`, `DocumentNaming`, `RemoteMarkdownLoader`, `LibrarySearch`, `QueryParser`, or `SearchIndex`. Add XCUITest cases for any user-visible flow change.
+- **Tests**: add or update XCTest cases for any logic change in `DocumentLibrary`, `DocumentNaming`, `MarkdownMetadata`, `RemoteMarkdownLoader`, `LibrarySearch`, `QueryParser`, `PlainText`, or `SearchIndex`. Add XCUITest cases for any user-visible flow change.
 - **Surgical changes**: match existing style, no inline comments inside function bodies, no speculative abstractions.
 
 ## Before claiming done

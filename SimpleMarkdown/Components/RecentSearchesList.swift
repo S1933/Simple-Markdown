@@ -27,17 +27,17 @@ struct RecentSearchesList: View {
                                     .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
-                            .accessibilityLabel("Utiliser « \(recent) » dans le champ")
+                            .accessibilityLabel("Use \"\(recent)\" in the search field")
                         }
                     }
                 } header: {
                     HStack {
-                        Text("Recherches récentes")
+                        Text("Recent searches")
                             .font(.title3.bold())
                             .foregroundStyle(.primary)
                             .textCase(nil)
                         Spacer()
-                        Button("Effacer") { store.clear() }
+                        Button("Clear") { store.clear() }
                             .font(.body)
                             .accessibilityIdentifier("search.clearRecents")
                     }

@@ -18,27 +18,28 @@ Single Xcode project: `SimpleMarkdown.xcodeproj`. External dependency: `Markdown
 SimpleMarkdown/
 ├── SimpleMarkdownApp.swift      # @main entry; builds DocumentLibrary; presents LibraryView or error
 ├── DocumentLibrary.swift        # Sole system boundary over FileManager; immutable write surface
-├── LibraryDocument.swift        # Value type: url, modifiedAt, title, name
+│                               #   (LibraryDocument declared here as well)
 ├── DocumentNaming.swift         # Name derivation: H1 → suggestion → fallback, sanitized
+├── MarkdownFile.swift           # UTType.markdown (importedAs), aligned with Info.plist
+├── MarkdownMetadata.swift       # Title: front matter ignored → first ATX heading outside fences
 ├── DocumentReaderView.swift     # Read-only detail; renders MarkdownPreviewView; ShareLink
 ├── LibraryView.swift            # NavigationSplitView sidebar; + menu; search; delete
-├── PasteMarkdownSheet.swift     # Add via PasteButton → add(text:suggestedName:"Collé")
+├── PasteMarkdownSheet.swift     # Add via auto-paste / PasteButton → add(text:suggestedName:"Pasted")
 ├── URLImportSheet.swift         # Add via HTTPS URL → RemoteMarkdownLoader → add(text:)
-├── RemoteMarkdownLoader.swift   # HTTPS fetch + validation; GitHub blob → raw rewrite
+├── RemoteMarkdownLoader.swift   # HTTPS streamed fetch + validation; GitHub blob → raw rewrite
 ├── MarkdownPreviewView.swift    # Markdown(text) wrapped in ScrollView with theme
 ├── MarkdownPreviewTheme.swift   # MarkdownUI theme (typography, spacing)
 ├── EditorTheme.swift            # Layout constants (maxLineWidth, padding)
 ├── CodeSyntaxHighlighter.swift  # Code block highlighting
 ├── CodePalette.swift            # Token colors for highlighting
 ├── PlainText.swift              # Markdown → plain text stripping for search indexing
-├── SearchIndex.swift            # actor; caches plainText per document by modifiedAt
+├── SearchIndex.swift            # actor; caches plainText per document by modifiedAt; cancellable
 ├── LibrarySearch.swift          # Range search (case/diacritic insensitive) + snippet windowing
-├── QueryParser.swift            # Parses "titre:", "contenu:", "modifié:<YYYY-MM-DD" qualifiers
+├── QueryParser.swift            # Parses "title:", "content:", "modified:<YYYY-MM-DD" qualifiers
 ├── RecentSearchesStore.swift    # Persisted recent query strings
 ├── SearchView.swift             # Search UI; debounced 200ms; qualifier chips
 ├── Components/
-│   ├── CircularToolbarButton.swift
-│   ├── QualifierChips.swift         # titre / contenu / modifié chips
+│   ├── QualifierChips.swift         # title / content / modified chips
 │   ├── RecentSearchesList.swift
 │   └── SearchResultRow.swift
 └── Info.plist                   # UIAppFonts + UTImportedTypeDeclarations (markdown)
@@ -61,7 +62,7 @@ Holds `rootURL` (the app's `Documents/` directory) and a `FileManager`. Write su
 - `delete(_:)` — removes a managed URL.
 - `read(_:)` — UTF-8 (with ISO-Latin-1 fallback) read; rejects URLs outside `rootURL` via `managedURL(_:)`.
 
-`documents()` lists regular files with a markdown extension, sorted by `modifiedAt` desc, then localized name asc. `title(for:)` reads the first 4 KiB and uses the first `#` heading, falling back to the filename. **Unique naming**: a numeric suffix (` 2`, ` 3`, …) is appended so no document is ever overwritten.
+`documents()` lists regular files with a markdown extension, sorted by `modifiedAt` desc, then localized name asc. `title(for:)` reads the first 4 KiB and delegates to `MarkdownMetadata.title(from:)`, the same function used to derive file names (front matter ignored, code fences skipped). **Unique naming**: a numeric suffix (` 2`, ` 3`, …) is appended so no document is ever overwritten.
 
 **Legacy migration**: `migrateLegacyDocuments(from:to:)` moves files from the old `Application Support/SimpleMarkdown/Documents/` into `Documents/`, gated by `UserDefaults` key `SimpleMarkdown.documentsMigration.v1`.
 
@@ -69,14 +70,14 @@ Holds `rootURL` (the app's `Documents/` directory) and a `FileManager`. Write su
 
 ### Import sources (three converge on `add`)
 The `+` menu in `LibraryView` offers exactly:
-1. **Coller le texte** → `PasteMarkdownSheet` (system `PasteButton`) → `add(text:suggestedName:"Collé")`.
-2. **Depuis une URL** → `URLImportSheet` → `RemoteMarkdownLoader.fetch(_:)` → `add(text:suggestedName: <URL last segment>)`.
-3. **Importer un fichier** → `.fileImporter(allowedContentTypes: [.markdown, .plainText])` → `importDocument(from:)`.
+1. **Paste text** → `PasteMarkdownSheet` reads the clipboard on open (iOS may prompt once), falls back to the system `PasteButton` → `add(text:suggestedName:"Pasted")`.
+2. **From a URL** → `URLImportSheet` → `RemoteMarkdownLoader.fetch(_:)` → `add(text:suggestedName: <URL last segment>)`.
+3. **Import a file** → `.fileImporter(allowedContentTypes: [.markdown, .plainText])` → `importDocument(from:)`.
 
 All three derive the final name through `DocumentNaming.name(forText:suggestion:fallback:)`:
 1. First `#` heading in text → sanitized.
 2. Else suggestion with extension stripped → sanitized.
-3. Else `"Sans titre"`.
+3. Else `DocumentNaming.untitled` (stable English stem, not localized).
 
 `sanitize` replaces `/` and `:` with `-`, trims, truncates to 120 chars, and falls back to `"Sans titre"` if empty.
 
@@ -96,9 +97,9 @@ The import stores a single immutable copy. No source URL, metadata, or refresh i
 `DocumentReaderView` loads text once via `library.read(document.url)` in `.task`, then renders `MarkdownPreviewView(text:)`. No mutable text state, no write actions. Toolbar exposes only `ShareLink(item: document.url)`.
 
 ### Search
-- `SearchIndex` is an `actor` caching `plainText` per document URL keyed by `modifiedAt`; invalidates on change, prunes deleted docs. Reads are capped at 256 KiB per document (`readLimit`). Exposes `readCount` for tests.
-- `QueryParser.parse(_:)` splits on spaces; tokens with `:` map to qualifiers `titre`, `contenu`, `modifié` (with `<`/`>`/`=` date modifiers, `YYYY-MM-DD`). Unqualified tokens become `freeText`.
-- `ParsedQuery.matches(_:plainText:)` enforces date bounds, then `allSatisfy` over title, content, and free-text terms.
+- `SearchIndex` is an `actor` caching `plainText` per document URL keyed by `modifiedAt`; invalidates on change, prunes deleted docs. Reads are capped at 256 KiB per document via `DocumentLibrary.readPrefix(_:maxBytes:)`, which never loads more than that from disk. `results(for:in:)` checks `Task.checkCancellation()` and yields every 25 documents so the actor stays responsive. Exposes `readCount` for tests.
+- `QueryParser.parse(_:)` tokenizes on spaces (respects `"…"`), matches qualifiers case- and diacritic-insensitively (`title`, `content`, `modified`; French forms `titre`, `contenu`, `modifie` kept as aliases). Date values support `<`, `<=`, `>`, `>=` comparators and bare `YYYY-MM-DD`. Unqualified tokens become `freeText`.
+- `ParsedQuery.matches(_:plainText:)` enforces the half-open date interval `[modifiedAfter, modifiedBefore)`, then `allSatisfy` over title, content, and free-text terms.
 - `LibrarySearch.ranges(in:query:)` does case- and diacritic-insensitive locale-aware matching. `snippet(in:terms:limit:)` produces a 160-char window around the earliest hit, snapped to word boundaries with `…` ellipses.
 - `SearchView` debounces 200 ms, cancels prior `Task`, and records the query in `RecentSearchesStore` on submit or selection. `QualifierChips` appear when the field is focused. Presented as `fullScreenCover` on compact width, `sheet` otherwise.
 

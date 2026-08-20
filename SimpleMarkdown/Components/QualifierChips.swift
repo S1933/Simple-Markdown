@@ -21,7 +21,7 @@ struct QualifierChips: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Filtrer par \(qualifier)")
+                    .accessibilityLabel("Filter by \(qualifier)")
                 }
             }
         }

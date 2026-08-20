@@ -27,18 +27,25 @@ actor SearchIndex {
     func results(
         for query: ParsedQuery,
         in documents: [LibraryDocument]
-    ) -> [SearchResult] {
+    ) async throws -> [SearchResult] {
         guard !query.isEmpty else { return [] }
         prune(keeping: documents)
 
-        return documents.compactMap { document in
+        var results: [SearchResult] = []
+        for (position, document) in documents.enumerated() {
+            try Task.checkCancellation()
+            if position % 25 == 0 { await Task.yield() }
+
             let plainText = plainText(for: document)
-            guard query.matches(document, plainText: plainText) else { return nil }
-            return SearchResult(
-                document: document,
-                snippet: LibrarySearch.snippet(in: plainText, terms: query.highlightTerms)
+            guard query.matches(document, plainText: plainText) else { continue }
+            results.append(
+                SearchResult(
+                    document: document,
+                    snippet: LibrarySearch.snippet(in: plainText, terms: query.highlightTerms)
+                )
             )
         }
+        return results
     }
 
     func invalidate(_ url: URL) {
@@ -50,8 +57,8 @@ actor SearchIndex {
             return entry.plainText
         }
         readCount += 1
-        let raw = (try? library.read(document.url)) ?? ""
-        let plainText = PlainText.strip(String(raw.prefix(Self.readLimit)))
+        let raw = (try? library.readPrefix(document.url, maxBytes: Self.readLimit)) ?? ""
+        let plainText = PlainText.strip(raw)
         entries[document.url] = Entry(modifiedAt: document.modifiedAt, plainText: plainText)
         return plainText
     }

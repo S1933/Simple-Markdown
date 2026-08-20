@@ -22,19 +22,38 @@ final class SearchPerformanceTests: XCTestCase {
         return url
     }
 
-    func testSearchStaysWithinBudgetOnLargeLibrary() throws {
+    /// A second search on the same library must hit the cache, not the disk.
+    /// This is the real anti-regression guard; the time budget below is set
+    /// generously to avoid flakes on shared runners.
+    func testIndexReadsEachDocumentOnlyOnce() async throws {
+        for position in 1...50 {
+            try write(String(repeating: "contenu ", count: 500), named: "doc\(position).md")
+        }
+        let index = SearchIndex(library: library)
+        let documents = try library.documents()
+        let query = QueryParser.parse("contenu")
+
+        _ = try await index.results(for: query, in: documents)
+        let afterFirstPass = await index.readCount
+        _ = try await index.results(for: query, in: documents)
+        let afterSecondPass = await index.readCount
+
+        XCTAssertEqual(afterFirstPass, documents.count)
+        XCTAssertEqual(afterSecondPass, afterFirstPass)
+    }
+
+    func testSearchOverLargeLibraryStaysUnderBudget() async throws {
         for position in 1...200 {
             try write(String(repeating: "contenu ", count: 500), named: "doc\(position).md")
         }
         let index = SearchIndex(library: library)
         let documents = try library.documents()
-        measure {
-            let finished = expectation(description: "recherche")
-            Task {
-                _ = await index.results(for: QueryParser.parse("contenu"), in: documents)
-                finished.fulfill()
-            }
-            wait(for: [finished], timeout: 5)
-        }
+
+        let started = ContinuousClock.now
+        let results = try await index.results(for: QueryParser.parse("contenu"), in: documents)
+        let elapsed = ContinuousClock.now - started
+
+        XCTAssertEqual(results.count, 200)
+        XCTAssertLessThan(elapsed, .seconds(2))
     }
 }

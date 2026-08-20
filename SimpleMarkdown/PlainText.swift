@@ -8,51 +8,64 @@ nonisolated enum PlainText {
         ("~~(.+?)~~", "$1")
     ]
 
+    private static let inlineRules: [(expression: NSRegularExpression, template: String)] =
+        inlinePatterns.compactMap { pattern, template in
+            guard let expression = try? NSRegularExpression(pattern: pattern) else { return nil }
+            return (expression, template)
+        }
+
+    private static let leadingMarkers = try? NSRegularExpression(
+        pattern: "^(#{1,6}\\s+|>\\s*|[-*+]\\s+|\\d+\\.\\s+)"
+    )
+
     static func strip(_ markdown: String) -> String {
-        var lines: [String] = []
-        var insideFence = false
+        var output: [String] = []
+        var fence: Character?
 
         for rawLine in markdown.components(separatedBy: .newlines) {
             let line = rawLine.trimmingCharacters(in: .whitespaces)
-            if line.hasPrefix("```") || line.hasPrefix("~~~") {
-                insideFence.toggle()
+
+            if let marker = fence {
+                if line.hasPrefix(String(repeating: String(marker), count: 3)) {
+                    fence = nil
+                } else if !line.isEmpty {
+                    output.append(line)
+                }
                 continue
             }
-            guard !insideFence, !line.isEmpty else { continue }
+            if line.hasPrefix("```") { fence = "`"; continue }
+            if line.hasPrefix("~~~") { fence = "~"; continue }
+
+            guard !line.isEmpty else { continue }
             if line.count >= 3, line.allSatisfy({ $0 == "-" || $0 == "*" || $0 == "_" }) {
                 continue
             }
-            lines.append(stripLeadingMarkers(from: line))
+            output.append(applyInlineRules(to: stripLeadingMarkers(from: line)))
         }
 
-        let joined = lines.joined(separator: " ")
-        return inlinePatterns
-            .reduce(joined) { text, rule in
-                replacing(text, pattern: rule.pattern, template: rule.template)
-            }
+        return output
+            .joined(separator: " ")
             .replacingOccurrences(of: "\\s{2,}", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespaces)
     }
 
-    private static func stripLeadingMarkers(from line: String) -> String {
-        replacing(
-            line,
-            pattern: "^(#{1,6}\\s+|>\\s*|[-*+]\\s+|\\d+\\.\\s+)",
-            template: ""
-        )
+    private static func applyInlineRules(to line: String) -> String {
+        let range = NSRange(location: 0, length: (line as NSString).length)
+        return inlineRules.reduce(line) { text, rule in
+            rule.expression.stringByReplacingMatches(
+                in: text,
+                range: range,
+                withTemplate: rule.template
+            )
+        }
     }
 
-    private static func replacing(
-        _ text: String,
-        pattern: String,
-        template: String
-    ) -> String {
-        guard let expression = try? NSRegularExpression(pattern: pattern) else { return text }
-        let range = NSRange(location: 0, length: (text as NSString).length)
-        return expression.stringByReplacingMatches(
-            in: text,
-            range: range,
-            withTemplate: template
+    private static func stripLeadingMarkers(from line: String) -> String {
+        guard let leadingMarkers else { return line }
+        return leadingMarkers.stringByReplacingMatches(
+            in: line,
+            range: NSRange(location: 0, length: (line as NSString).length),
+            withTemplate: ""
         )
     }
 }

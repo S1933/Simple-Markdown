@@ -21,17 +21,17 @@ struct URLImportSheet: View {
                     Text(errorMessage).foregroundStyle(.red)
                 }
             }
-            .navigationTitle("Depuis une URL")
+            .navigationTitle("From a URL")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Annuler") { dismiss() }
+                    Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if isLoading {
                         ProgressView()
                     } else {
-                        Button("Charger") { load() }
+                        Button("Load") { load() }
                             .disabled(URL(string: urlString) == nil)
                             .accessibilityIdentifier("url.confirm")
                     }
@@ -59,15 +59,15 @@ struct URLImportSheet: View {
     private func readableMessage(for error: Error) -> String {
         switch error {
         case RemoteMarkdownLoader.LoadError.insecureScheme:
-            return "Seules les adresses en https sont acceptées."
+            return "Only https addresses are supported."
         case RemoteMarkdownLoader.LoadError.unsupportedContentType:
-            return "Ce lien ne pointe pas vers du texte."
+            return "This link doesn't point to text."
         case RemoteMarkdownLoader.LoadError.tooLarge:
-            return "Le document est trop volumineux."
+            return "This document is too large."
         case RemoteMarkdownLoader.LoadError.serverError(let status):
-            return "Le serveur a répondu avec une erreur (\(status))."
+            return "The server returned an error (\(status))."
         default:
-            return "Impossible de charger ce document."
+            return "Couldn't load this document."
         }
     }
 }

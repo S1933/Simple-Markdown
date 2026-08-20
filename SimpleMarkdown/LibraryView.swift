@@ -12,8 +12,13 @@ struct LibraryView: View {
     @State private var isImportingFromURL = false
     @State private var pendingDeletion: LibraryDocument?
     @State private var isSearching = false
-    @State private var index: SearchIndex?
+    @State private var index: SearchIndex
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    init(library: DocumentLibrary) {
+        self.library = library
+        _index = State(initialValue: SearchIndex(library: library))
+    }
 
     var body: some View {
         NavigationSplitView {
@@ -24,17 +29,17 @@ struct LibraryView: View {
                     .id(document.url)
             } else {
                 ContentUnavailableView(
-                    "Sélectionnez un document",
+                    "Select a document",
                     systemImage: "doc.text",
-                    description: Text("Choisissez une note dans la liste, ou ajoutez-en une nouvelle.")
+                    description: Text("Pick a note from the list, or add a new one.")
                 )
                 .accessibilityIdentifier("library.placeholder")
             }
         }
-        .alert("Une erreur est survenue", isPresented: hasError) {
+        .alert("Something went wrong", isPresented: hasError) {
             Button("OK") { errorMessage = nil }
         } message: {
-            Text(errorMessage ?? "Erreur inconnue")
+            Text(errorMessage ?? "Unknown error")
         }
         .fileImporter(
             isPresented: $isImporting,
@@ -44,43 +49,48 @@ struct LibraryView: View {
         }
         .sheet(isPresented: $isPastingText) {
             PasteMarkdownSheet { text in
-                addFromText(text, suggestedName: "Collé")
+                addFromText(text, suggestedName: "Pasted")
             }
         }
         .sheet(isPresented: $isImportingFromURL) {
+#if DEBUG
+            URLImportSheet(loader: .configured()) { text, suggestedName in
+                addFromText(text, suggestedName: suggestedName)
+            }
+#else
             URLImportSheet(loader: RemoteMarkdownLoader()) { text, suggestedName in
                 addFromText(text, suggestedName: suggestedName)
             }
+#endif
         }
         .confirmationDialog(
-            "Supprimer ce document ?",
+            "Delete this document?",
             isPresented: isConfirmingDelete,
             titleVisibility: .visible
         ) {
-            Button("Supprimer", role: .destructive) {
+            Button("Delete", role: .destructive) {
                 guard let pendingDeletion else { return }
                 delete(pendingDeletion)
                 self.pendingDeletion = nil
             }
-            Button("Annuler", role: .cancel) {
+            Button("Cancel", role: .cancel) {
                 pendingDeletion = nil
             }
         }
         .task {
             refresh()
-            index = SearchIndex(library: library)
         }
         .fullScreenCover(isPresented: isSearchingFullScreen) {
             SearchView(
                 documents: documents,
-                index: index ?? SearchIndex(library: library),
+                index: index,
                 onSelect: { selectedDocument = $0 }
             )
         }
         .sheet(isPresented: isSearchingSheet) {
             SearchView(
                 documents: documents,
-                index: index ?? SearchIndex(library: library),
+                index: index,
                 onSelect: { selectedDocument = $0 }
             )
         }
@@ -104,9 +114,9 @@ struct LibraryView: View {
         Group {
             if documents.isEmpty {
                 ContentUnavailableView(
-                    "Aucun document",
+                    "No documents",
                     systemImage: "doc.text",
-                    description: Text("Collez du texte, chargez une URL, ou importez un fichier Markdown.")
+                    description: Text("Paste text, load a URL, or import a Markdown file.")
                 )
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("library.empty")
@@ -114,7 +124,7 @@ struct LibraryView: View {
                 documentList
             }
         }
-        .navigationTitle("Bibliothèque")
+        .navigationTitle("Library")
         .toolbar { toolbarItems }
         .onChange(of: selectedDocument) { _, newValue in
             guard newValue == nil else { return }
@@ -132,7 +142,7 @@ struct LibraryView: View {
             }
             .tag(document)
             .swipeActions {
-                Button("Supprimer", role: .destructive) {
+                Button("Delete", role: .destructive) {
                     pendingDeletion = document
                 }
             }
@@ -144,24 +154,24 @@ struct LibraryView: View {
     private var toolbarItems: some ToolbarContent {
         ToolbarItem(placement: .primaryAction) {
             Menu {
-                Button("Coller le texte", systemImage: "doc.on.clipboard") {
+                Button("Paste text", systemImage: "doc.on.clipboard") {
                     isPastingText = true
                 }
                 .accessibilityIdentifier("library.add.paste")
 
-                Button("Depuis une URL", systemImage: "link") {
+                Button("From a URL", systemImage: "link") {
                     isImportingFromURL = true
                 }
                 .accessibilityIdentifier("library.add.url")
 
-                Button("Importer un fichier", systemImage: "square.and.arrow.down") {
+                Button("Import a file", systemImage: "square.and.arrow.down") {
                     isImporting = true
                 }
                 .accessibilityIdentifier("library.add.file")
             } label: {
                 Image(systemName: "plus")
             }
-            .accessibilityLabel("Ajouter un document")
+            .accessibilityLabel("Add a document")
             .accessibilityIdentifier("library.add")
         }
         ToolbarItem(placement: .primaryAction) {
@@ -189,33 +199,64 @@ struct LibraryView: View {
     }
 
     private func refresh() {
-        do {
-            documents = try library.documents()
-        } catch {
-            errorMessage = error.localizedDescription
+        let library = library
+        Task {
+            do {
+                let fresh = try await Task.detached(priority: .userInitiated) {
+                    try library.documents()
+                }.value
+                documents = fresh
+            } catch {
+                errorMessage = error.localizedDescription
+            }
         }
     }
 
     private func importDocument(_ result: Result<URL, Error>) {
-        do {
-            try open(library.importDocument(from: result.get()))
-        } catch {
+        switch result {
+        case .success(let url):
+            addFromURL(url)
+        case .failure(let error):
             errorMessage = error.localizedDescription
+        }
+    }
+
+    private func addFromURL(_ url: URL) {
+        let library = library
+        Task {
+            do {
+                let stored = try await Task.detached(priority: .userInitiated) {
+                    try library.importDocument(from: url)
+                }.value
+                try await open(stored)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
         }
     }
 
     private func addFromText(_ text: String, suggestedName: String) {
-        do {
-            try open(library.add(text: text, suggestedName: suggestedName))
-        } catch {
-            errorMessage = error.localizedDescription
+        let library = library
+        Task {
+            do {
+                let stored = try await Task.detached(priority: .userInitiated) {
+                    try library.add(text: text, suggestedName: suggestedName)
+                }.value
+                try await open(stored)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
         }
     }
 
-    private func open(_ url: URL) throws {
-        documents = try library.documents()
+    private func open(_ url: URL) async throws {
+        let library = library
+        let fresh = try await Task.detached(priority: .userInitiated) {
+            try library.documents()
+        }.value
+        documents = fresh
         let targetPath = url.resolvingSymlinksInPath().path
-        guard let document = documents.first(where: {
+        guard let document = fresh.first(where: {
             $0.url.resolvingSymlinksInPath().path == targetPath
         }) else {
             throw CocoaError(.fileNoSuchFile)
@@ -224,14 +265,19 @@ struct LibraryView: View {
     }
 
     private func delete(_ document: LibraryDocument) {
-        do {
-            try library.delete(document.url)
-            if selectedDocument == document {
-                selectedDocument = nil
+        let library = library
+        let url = document.url
+        let wasSelected = selectedDocument == document
+        Task {
+            do {
+                try await Task.detached(priority: .userInitiated) {
+                    try library.delete(url)
+                }.value
+                if wasSelected { selectedDocument = nil }
+                refresh()
+            } catch {
+                errorMessage = error.localizedDescription
             }
-            refresh()
-        } catch {
-            errorMessage = error.localizedDescription
         }
     }
 }

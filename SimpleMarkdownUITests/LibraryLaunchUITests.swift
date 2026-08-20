@@ -9,9 +9,9 @@ final class LibraryLaunchUITests: XCTestCase {
 
         XCTAssertTrue(app.otherElements["library.empty"].waitForExistence(timeout: 5))
         app.buttons["library.add"].tap()
-        XCTAssertTrue(app.buttons["Coller le texte"].exists)
-        XCTAssertTrue(app.buttons["Depuis une URL"].exists)
-        XCTAssertTrue(app.buttons["Importer un fichier"].exists)
+        XCTAssertTrue(app.buttons["library.add.paste"].exists)
+        XCTAssertTrue(app.buttons["library.add.url"].exists)
+        XCTAssertTrue(app.buttons["library.add.file"].exists)
     }
 
     func testLibraryInitializationFailureShowsErrorInsteadOfCrashing() {

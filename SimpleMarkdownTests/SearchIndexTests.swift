@@ -25,7 +25,7 @@ final class SearchIndexTests: XCTestCase {
     func testEmptyQueryReturnsNoResults() async throws {
         try write("# Notes\nBudget prévisionnel", named: "notes.md")
         let index = SearchIndex(library: library)
-        let results = await index.results(
+        let results = try await index.results(
             for: QueryParser.parse(" "),
             in: try library.documents()
         )
@@ -36,8 +36,8 @@ final class SearchIndexTests: XCTestCase {
         try write("Budget prévisionnel", named: "notes.md")
         let index = SearchIndex(library: library)
         let documents = try library.documents()
-        _ = await index.results(for: QueryParser.parse("budget"), in: documents)
-        _ = await index.results(for: QueryParser.parse("budget"), in: documents)
+        _ = try await index.results(for: QueryParser.parse("budget"), in: documents)
+        _ = try await index.results(for: QueryParser.parse("budget"), in: documents)
         let reads = await index.readCount
         XCTAssertEqual(reads, 1)
     }
@@ -45,9 +45,9 @@ final class SearchIndexTests: XCTestCase {
     func testDeletedDocumentDisappearsFromResults() async throws {
         let url = try write("Budget", named: "notes.md")
         let index = SearchIndex(library: library)
-        _ = await index.results(for: QueryParser.parse("budget"), in: try library.documents())
+        _ = try await index.results(for: QueryParser.parse("budget"), in: try library.documents())
         try library.delete(url)
-        let results = await index.results(
+        let results = try await index.results(
             for: QueryParser.parse("budget"),
             in: try library.documents()
         )
@@ -59,7 +59,7 @@ final class SearchIndexTests: XCTestCase {
         let broken = root.appendingPathComponent("casse.md")
         try Data([0xFF, 0xFE, 0x00]).write(to: broken, options: .atomic)
         let index = SearchIndex(library: library)
-        let results = await index.results(
+        let results = try await index.results(
             for: QueryParser.parse("budget"),
             in: try library.documents()
         )

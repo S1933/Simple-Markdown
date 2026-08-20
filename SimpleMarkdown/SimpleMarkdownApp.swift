@@ -43,7 +43,7 @@ private struct LibraryStartupErrorView: View {
 
     var body: some View {
         ContentUnavailableView(
-            "Bibliothèque indisponible",
+            "Library unavailable",
             systemImage: "exclamationmark.folder",
             description: Text(error.localizedDescription)
         )

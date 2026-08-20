@@ -17,8 +17,10 @@ nonisolated struct ParsedQuery: Equatable, Sendable {
 
     var highlightTerms: [String] { freeText + contentTerms }
 
+    /// Date bounds are a half-open interval: `[modifiedAfter, modifiedBefore)`.
+    /// A document modified at exactly `modifiedBefore` is excluded.
     func matches(_ document: LibraryDocument, plainText: String) -> Bool {
-        if let modifiedAfter, document.modifiedAt <= modifiedAfter { return false }
+        if let modifiedAfter, document.modifiedAt < modifiedAfter { return false }
         if let modifiedBefore, document.modifiedAt >= modifiedBefore { return false }
 
         let titleOK = titleTerms.allSatisfy {
@@ -35,7 +37,34 @@ nonisolated struct ParsedQuery: Equatable, Sendable {
 }
 
 nonisolated enum QueryParser {
-    static let qualifiers = ["titre", "contenu", "modifié"]
+    enum Qualifier: String, CaseIterable {
+        case title, content, modified
+
+        /// French aliases kept so existing recent-search entries still parse.
+        static let aliases: [String: Qualifier] = [
+            "titre": .title,
+            "contenu": .content,
+            "modifie": .modified
+        ]
+
+        static func named(_ raw: String) -> Qualifier? {
+            let folded = raw.folding(
+                options: [.diacriticInsensitive, .caseInsensitive],
+                locale: .current
+            )
+            return Qualifier(rawValue: folded) ?? aliases[folded]
+        }
+    }
+
+    /// What the chips insert: only English forms. French aliases remain
+    /// accepted by `Qualifier.named(_:)` for backward compatibility.
+    static let qualifiers = Qualifier.allCases.map(\.rawValue)
+
+    private enum Comparison {
+        case before, onOrBefore, after, onOrAfter, on
+    }
+
+    private static let calendar = Calendar(identifier: .gregorian)
 
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -48,38 +77,84 @@ nonisolated enum QueryParser {
     static func parse(_ raw: String) -> ParsedQuery {
         var query = ParsedQuery()
 
-        for token in raw.split(separator: " ").map(String.init) {
+        for token in tokenize(raw) {
             guard let separator = token.firstIndex(of: ":") else {
                 query.freeText.append(token)
                 continue
             }
-            let qualifier = String(token[token.startIndex..<separator])
+            let qualifierName = String(token[token.startIndex..<separator])
             let value = String(token[token.index(after: separator)...])
 
-            guard qualifiers.contains(qualifier) else {
+            guard let qualifier = Qualifier.named(qualifierName) else {
                 query.freeText.append(token)
                 continue
             }
             guard !value.isEmpty else { continue }
 
             switch qualifier {
-            case "titre": query.titleTerms.append(value)
-            case "contenu": query.contentTerms.append(value)
-            case "modifié": apply(dateValue: value, to: &query)
-            default: break
+            case .title: query.titleTerms.append(value)
+            case .content: query.contentTerms.append(value)
+            case .modified: apply(dateValue: value, to: &query)
             }
         }
         return query
     }
 
+    /// Splits on spaces while respecting double quotes so that
+    /// `title:"mon rapport"` becomes a single `title:mon rapport` token.
+    private static func tokenize(_ raw: String) -> [String] {
+        var tokens: [String] = []
+        var current = ""
+        var insideQuotes = false
+
+        for character in raw {
+            if character == "\"" {
+                insideQuotes.toggle()
+                continue
+            }
+            if character == " ", !insideQuotes {
+                if !current.isEmpty {
+                    tokens.append(current)
+                    current = ""
+                }
+                continue
+            }
+            current.append(character)
+        }
+        if !current.isEmpty { tokens.append(current) }
+        return tokens
+    }
+
     private static func apply(dateValue: String, to query: inout ParsedQuery) {
-        let isBefore = dateValue.hasPrefix("<")
-        let trimmed = dateValue.drop { $0 == "<" || $0 == ">" || $0 == "=" }
-        guard let date = dateFormatter.date(from: String(trimmed)) else { return }
-        if isBefore {
-            query.modifiedBefore = date
+        let comparison: Comparison
+        var raw = Substring(dateValue)
+
+        if raw.hasPrefix("<=") {
+            comparison = .onOrBefore
+            raw = raw.dropFirst(2)
+        } else if raw.hasPrefix(">=") {
+            comparison = .onOrAfter
+            raw = raw.dropFirst(2)
+        } else if raw.hasPrefix("<") {
+            comparison = .before
+            raw = raw.dropFirst()
+        } else if raw.hasPrefix(">") {
+            comparison = .after
+            raw = raw.dropFirst()
         } else {
-            query.modifiedAfter = date
+            comparison = .on
+            raw = raw.drop(while: { $0 == "=" })
+        }
+
+        guard let day = dateFormatter.date(from: String(raw)) else { return }
+        let nextDay = calendar.date(byAdding: .day, value: 1, to: day) ?? day
+
+        switch comparison {
+        case .before:     query.modifiedBefore = day
+        case .onOrBefore: query.modifiedBefore = nextDay
+        case .after:      query.modifiedAfter = nextDay
+        case .onOrAfter:  query.modifiedAfter = day
+        case .on:         query.modifiedAfter = day; query.modifiedBefore = nextDay
         }
     }
 }

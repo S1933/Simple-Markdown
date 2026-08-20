@@ -5,10 +5,31 @@ private final class StubSession: URLSessionProtocol {
     nonisolated(unsafe) var response: (Data, URLResponse)?
     nonisolated(unsafe) var error: Error?
 
-    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+    func stream(
+        for request: URLRequest
+    ) async throws -> (AsyncThrowingStream<UInt8, Error>, URLResponse) {
         if let error { throw error }
-        return response!
+        let body = response!.0
+        let response = response!.1
+        let stream = AsyncThrowingStream<UInt8, Error> { continuation in
+            for byte in body { continuation.yield(byte) }
+            continuation.finish()
+        }
+        return (stream, response)
     }
+}
+
+private func makeResponse(
+    _ url: URL = URL(string: "https://example.com/note.md")!,
+    status: Int = 200,
+    headers: [String: String]? = nil
+) -> HTTPURLResponse {
+    HTTPURLResponse(
+        url: url,
+        statusCode: status,
+        httpVersion: "HTTP/1.1",
+        headerFields: headers
+    )!
 }
 
 final class RemoteMarkdownLoaderTests: XCTestCase {
@@ -28,12 +49,10 @@ final class RemoteMarkdownLoaderTests: XCTestCase {
         let session = StubSession()
         session.response = (
             Data("# Title".utf8),
-            HTTPURLResponse(
-                url: URL(string: "https://raw.githubusercontent.com/o/r/main/f.md")!,
-                statusCode: 200,
-                httpVersion: nil,
-                headerFields: ["Content-Type": "text/plain"]
-            )!
+            makeResponse(
+                URL(string: "https://raw.githubusercontent.com/o/r/main/f.md")!,
+                headers: ["Content-Type": "text/plain"]
+            )
         )
         let loader = RemoteMarkdownLoader(session: session)
         let text = try await loader.fetch(URL(string: "https://github.com/o/r/blob/main/f.md")!)
@@ -44,12 +63,7 @@ final class RemoteMarkdownLoaderTests: XCTestCase {
         let session = StubSession()
         session.response = (
             Data(),
-            HTTPURLResponse(
-                url: URL(string: "https://example.com/note.md")!,
-                statusCode: 200,
-                httpVersion: nil,
-                headerFields: ["Content-Type": "image/png"]
-            )!
+            makeResponse(headers: ["Content-Type": "image/png"])
         )
         let loader = RemoteMarkdownLoader(session: session)
         do {
@@ -67,12 +81,44 @@ final class RemoteMarkdownLoaderTests: XCTestCase {
         let big = Data(repeating: 0x41, count: 3 * 1024 * 1024)
         session.response = (
             big,
-            HTTPURLResponse(
-                url: URL(string: "https://example.com/note.md")!,
-                statusCode: 200,
-                httpVersion: nil,
-                headerFields: ["Content-Type": "text/markdown"]
-            )!
+            makeResponse(headers: ["Content-Type": "text/markdown"])
+        )
+        let loader = RemoteMarkdownLoader(session: session)
+        do {
+            _ = try await loader.fetch(URL(string: "https://example.com/note.md")!)
+            XCTFail("expected rejection")
+        } catch RemoteMarkdownLoader.LoadError.tooLarge {
+            // expected
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    func testRejectsMissingContentType() async {
+        let session = StubSession()
+        session.response = (
+            Data("# Titre".utf8),
+            makeResponse(headers: nil)
+        )
+        let loader = RemoteMarkdownLoader(session: session)
+        do {
+            _ = try await loader.fetch(URL(string: "https://example.com/note.md")!)
+            XCTFail("expected rejection")
+        } catch RemoteMarkdownLoader.LoadError.unsupportedContentType {
+            // expected
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    func testAnnouncedContentLengthAboveLimitFailsFast() async {
+        let session = StubSession()
+        session.response = (
+            Data("# Titre".utf8),
+            makeResponse(headers: [
+                "Content-Type": "text/markdown",
+                "Content-Length": "9000000"
+            ])
         )
         let loader = RemoteMarkdownLoader(session: session)
         do {
@@ -89,12 +135,7 @@ final class RemoteMarkdownLoaderTests: XCTestCase {
         let session = StubSession()
         session.response = (
             Data(),
-            HTTPURLResponse(
-                url: URL(string: "https://example.com/missing.md")!,
-                statusCode: 404,
-                httpVersion: nil,
-                headerFields: nil
-            )!
+            makeResponse(status: 404, headers: nil)
         )
         let loader = RemoteMarkdownLoader(session: session)
         do {

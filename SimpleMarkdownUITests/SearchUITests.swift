@@ -26,12 +26,10 @@ final class SearchUITests: XCTestCase {
         app.launch()
 
         app.buttons["library.add"].tap()
-        app.buttons["Coller le texte"].tap()
+        app.buttons["library.add.paste"].tap()
         app.buttons["paste.confirm"].tap()
         app.navigationBars.buttons.element(boundBy: 0).tap()
 
-        // Wait for the document to appear in the library list, ensuring
-        // SwiftUI has committed the documents state before we search.
         XCTAssertTrue(app.staticTexts["Réunion"].waitForExistence(timeout: 5))
 
         app.buttons["library.search-button"].tap()
