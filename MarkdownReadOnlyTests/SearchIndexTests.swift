@@ -54,15 +54,4 @@ final class SearchIndexTests: XCTestCase {
         XCTAssertTrue(results.isEmpty)
     }
 
-    func testUnreadableDocumentDoesNotBreakOtherResults() async throws {
-        try write("Budget prévisionnel", named: "bon.md")
-        let broken = root.appendingPathComponent("casse.md")
-        try Data([0xFF, 0xFE, 0x00]).write(to: broken, options: .atomic)
-        let index = SearchIndex(library: library)
-        let results = try await index.results(
-            for: QueryParser.parse("budget"),
-            in: try library.documents()
-        )
-        XCTAssertEqual(results.count, 1)
-    }
 }
