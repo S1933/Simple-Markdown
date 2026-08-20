@@ -24,26 +24,26 @@
 
 **Files:**
 
-- Modify: `SimpleMarkdown.xcodeproj/project.pbxproj`
-- Create: `SimpleMarkdownTests/DocumentLibraryTests.swift`
-- Create: `SimpleMarkdownUITests/LibraryLaunchUITests.swift`
+- Modify: `MarkdownReadOnly.xcodeproj/project.pbxproj`
+- Create: `MarkdownReadOnlyTests/DocumentLibraryTests.swift`
+- Create: `MarkdownReadOnlyUITests/LibraryLaunchUITests.swift`
 
 **Interfaces:**
 
-- Consumes: existing `SimpleMarkdown` application target.
-- Produces: `SimpleMarkdownTests` unit-test target and `SimpleMarkdownUITests` UI-test target, both included in the shared `SimpleMarkdown` scheme.
+- Consumes: existing `MarkdownReadOnly` application target.
+- Produces: `MarkdownReadOnlyTests` unit-test target and `MarkdownReadOnlyUITests` UI-test target, both included in the shared `MarkdownReadOnly` scheme.
 
 - [ ] **Step 1: Add target configuration**
 
-Add an iOS Unit Testing Bundle named `SimpleMarkdownTests` with `TEST_HOST = $(BUILT_PRODUCTS_DIR)/SimpleMarkdown.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SimpleMarkdown`, `BUNDLE_LOADER = $(TEST_HOST)`, and a dependency on `SimpleMarkdown`. Add an iOS UI Testing Bundle named `SimpleMarkdownUITests` with `TEST_TARGET_NAME = SimpleMarkdown` and the same target dependency. Use automatic signing, deployment settings inherited from the app, and file-system-synchronized groups for each new test directory.
+Add an iOS Unit Testing Bundle named `MarkdownReadOnlyTests` with `TEST_HOST = $(BUILT_PRODUCTS_DIR)/MarkdownReadOnly.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MarkdownReadOnly`, `BUNDLE_LOADER = $(TEST_HOST)`, and a dependency on `MarkdownReadOnly`. Add an iOS UI Testing Bundle named `MarkdownReadOnlyUITests` with `TEST_TARGET_NAME = MarkdownReadOnly` and the same target dependency. Use automatic signing, deployment settings inherited from the app, and file-system-synchronized groups for each new test directory.
 
 - [ ] **Step 2: Add the failing storage contract tests**
 
-Create `SimpleMarkdownTests/DocumentLibraryTests.swift`:
+Create `MarkdownReadOnlyTests/DocumentLibraryTests.swift`:
 
 ```swift
 import XCTest
-@testable import SimpleMarkdown
+@testable import MarkdownReadOnly
 
 final class DocumentLibraryTests: XCTestCase {
     private var root: URL!
@@ -147,10 +147,10 @@ Run:
 
 ```bash
 xcodebuild test \
-  -project SimpleMarkdown.xcodeproj \
-  -scheme SimpleMarkdown \
+  -project MarkdownReadOnly.xcodeproj \
+  -scheme MarkdownReadOnly \
   -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.6' \
-  -only-testing:SimpleMarkdownTests
+  -only-testing:MarkdownReadOnlyTests
 ```
 
 Expected: compilation fails because `DocumentLibrary` does not exist. If the scheme does not include the targets, fix target/scheme membership and rerun until this is the only failure.
@@ -158,7 +158,7 @@ Expected: compilation fails because `DocumentLibrary` does not exist. If the sch
 - [ ] **Step 4: Commit the test infrastructure and red tests**
 
 ```bash
-git add SimpleMarkdown.xcodeproj/project.pbxproj SimpleMarkdownTests SimpleMarkdownUITests
+git add MarkdownReadOnly.xcodeproj/project.pbxproj MarkdownReadOnlyTests MarkdownReadOnlyUITests
 git commit -m "test: define private document library behavior"
 ```
 
@@ -168,9 +168,9 @@ git commit -m "test: define private document library behavior"
 
 **Files:**
 
-- Create: `SimpleMarkdown/DocumentLibrary.swift`
-- Modify: `SimpleMarkdown/MarkdownFile.swift`
-- Test: `SimpleMarkdownTests/DocumentLibraryTests.swift`
+- Create: `MarkdownReadOnly/DocumentLibrary.swift`
+- Modify: `MarkdownReadOnly/MarkdownFile.swift`
+- Test: `MarkdownReadOnlyTests/DocumentLibraryTests.swift`
 
 **Interfaces:**
 
@@ -191,7 +191,7 @@ extension UTType {
 
 - [ ] **Step 2: Implement the minimal library required by the red tests**
 
-Create `SimpleMarkdown/DocumentLibrary.swift` with this public shape:
+Create `MarkdownReadOnly/DocumentLibrary.swift` with this public shape:
 
 ```swift
 import Foundation
@@ -230,8 +230,8 @@ struct DocumentLibrary {
 Implementation requirements:
 
 - `init` creates `rootURL` with intermediate directories.
-- `live()` uses `applicationSupportDirectory/SimpleMarkdown/Documents`.
-- `uiTesting()` uses `applicationSupportDirectory/SimpleMarkdown-UITests/Documents`, deleting only the `SimpleMarkdown-UITests` subtree before recreating it.
+- `live()` uses `applicationSupportDirectory/MarkdownReadOnly/Documents`.
+- `uiTesting()` uses `applicationSupportDirectory/MarkdownReadOnly-UITests/Documents`, deleting only the `MarkdownReadOnly-UITests` subtree before recreating it.
 - `documents()` reads regular files with resource keys `.isRegularFileKey` and `.contentModificationDateKey`, accepts only the three declared extensions, then sorts modification date descending and name ascending.
 - `createDocument()` calls a private `uniqueURL(stem:extension:)`, writes empty UTF-8 data atomically, and returns the URL.
 - `importDocument(from:)` rejects unsupported extensions, wraps copying in `startAccessingSecurityScopedResource()`/`stopAccessingSecurityScopedResource()`, and copies to a unique URL.
@@ -244,12 +244,12 @@ Implementation requirements:
 
 Run the Task 1 unit-test command.
 
-Expected: all `SimpleMarkdownTests` tests pass with no test warnings. Do not begin UI work while any storage test fails.
+Expected: all `MarkdownReadOnlyTests` tests pass with no test warnings. Do not begin UI work while any storage test fails.
 
 - [ ] **Step 4: Commit the green storage boundary**
 
 ```bash
-git add SimpleMarkdown/DocumentLibrary.swift SimpleMarkdown/MarkdownFile.swift SimpleMarkdownTests/DocumentLibraryTests.swift
+git add MarkdownReadOnly/DocumentLibrary.swift MarkdownReadOnly/MarkdownFile.swift MarkdownReadOnlyTests/DocumentLibraryTests.swift
 git commit -m "feat: add private markdown storage"
 ```
 
@@ -259,9 +259,9 @@ git commit -m "feat: add private markdown storage"
 
 **Files:**
 
-- Modify: `SimpleMarkdown/EditorView.swift`
-- Create: `SimpleMarkdown/DocumentEditorView.swift`
-- Modify: `SimpleMarkdownTests/DocumentLibraryTests.swift`
+- Modify: `MarkdownReadOnly/EditorView.swift`
+- Create: `MarkdownReadOnly/DocumentEditorView.swift`
+- Modify: `MarkdownReadOnlyTests/DocumentLibraryTests.swift`
 
 **Interfaces:**
 
@@ -364,8 +364,8 @@ Run unit tests, then:
 
 ```bash
 xcodebuild build \
-  -project SimpleMarkdown.xcodeproj \
-  -scheme SimpleMarkdown \
+  -project MarkdownReadOnly.xcodeproj \
+  -scheme MarkdownReadOnly \
   -destination 'generic/platform=iOS' \
   CODE_SIGNING_ALLOWED=NO
 ```
@@ -375,7 +375,7 @@ Expected: unit tests pass and `** BUILD SUCCEEDED **` appears.
 - [ ] **Step 5: Commit the editor adapter**
 
 ```bash
-git add SimpleMarkdown/EditorView.swift SimpleMarkdown/DocumentEditorView.swift SimpleMarkdownTests/DocumentLibraryTests.swift
+git add MarkdownReadOnly/EditorView.swift MarkdownReadOnly/DocumentEditorView.swift MarkdownReadOnlyTests/DocumentLibraryTests.swift
 git commit -m "refactor: edit private markdown files"
 ```
 
@@ -385,11 +385,11 @@ git commit -m "refactor: edit private markdown files"
 
 **Files:**
 
-- Create: `SimpleMarkdown/LibraryView.swift`
-- Modify: `SimpleMarkdown/SimpleMarkdownApp.swift`
-- Modify: `SimpleMarkdown/Info.plist`
-- Modify: `SimpleMarkdown.xcodeproj/project.pbxproj`
-- Modify: `SimpleMarkdownUITests/LibraryLaunchUITests.swift`
+- Create: `MarkdownReadOnly/LibraryView.swift`
+- Modify: `MarkdownReadOnly/MarkdownReadOnlyApp.swift`
+- Modify: `MarkdownReadOnly/Info.plist`
+- Modify: `MarkdownReadOnly.xcodeproj/project.pbxproj`
+- Modify: `MarkdownReadOnlyUITests/LibraryLaunchUITests.swift`
 
 **Interfaces:**
 
@@ -398,7 +398,7 @@ git commit -m "refactor: edit private markdown files"
 
 - [ ] **Step 1: Write the failing launch UI test**
 
-Create `SimpleMarkdownUITests/LibraryLaunchUITests.swift`:
+Create `MarkdownReadOnlyUITests/LibraryLaunchUITests.swift`:
 
 ```swift
 import XCTest
@@ -421,10 +421,10 @@ Run:
 
 ```bash
 xcodebuild test \
-  -project SimpleMarkdown.xcodeproj \
-  -scheme SimpleMarkdown \
+  -project MarkdownReadOnly.xcodeproj \
+  -scheme MarkdownReadOnly \
   -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.6' \
-  -only-testing:SimpleMarkdownUITests/LibraryLaunchUITests/testFreshLibraryIsEmptyAndOffersBothAddActions
+  -only-testing:MarkdownReadOnlyUITests/LibraryLaunchUITests/testFreshLibraryIsEmptyAndOffersBothAddActions
 ```
 
 Expected: FAIL because the current `DocumentGroup` does not expose `library.empty` or `library.add`.
@@ -454,11 +454,11 @@ Required view behavior:
 
 - [ ] **Step 3: Replace the application scene**
 
-Replace `DocumentGroup` in `SimpleMarkdownApp.swift` with:
+Replace `DocumentGroup` in `MarkdownReadOnlyApp.swift` with:
 
 ```swift
 @main
-struct SimpleMarkdownApp: App {
+struct MarkdownReadOnlyApp: App {
     private let library: DocumentLibrary
 
     init() {
@@ -489,8 +489,8 @@ Run the UI test and confirm it passes. Then run the full suite:
 
 ```bash
 xcodebuild test \
-  -project SimpleMarkdown.xcodeproj \
-  -scheme SimpleMarkdown \
+  -project MarkdownReadOnly.xcodeproj \
+  -scheme MarkdownReadOnly \
   -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.6'
 ```
 
@@ -510,7 +510,7 @@ Install and launch from Xcode on `iPhone JPDN`. Verify manually:
 - [ ] **Step 7: Commit the completed private library UI**
 
 ```bash
-git add SimpleMarkdown/LibraryView.swift SimpleMarkdown/SimpleMarkdownApp.swift SimpleMarkdown/Info.plist SimpleMarkdown.xcodeproj/project.pbxproj SimpleMarkdownUITests/LibraryLaunchUITests.swift
+git add MarkdownReadOnly/LibraryView.swift MarkdownReadOnly/MarkdownReadOnlyApp.swift MarkdownReadOnly/Info.plist MarkdownReadOnly.xcodeproj/project.pbxproj MarkdownReadOnlyUITests/LibraryLaunchUITests.swift
 git commit -m "feat: add private markdown library"
 ```
 

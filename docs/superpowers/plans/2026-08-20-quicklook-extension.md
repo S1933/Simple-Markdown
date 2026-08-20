@@ -7,7 +7,7 @@
 
 ## Why this plan exists
 
-Simple Markdown is a read-only Markdown reader. Every other reader on the
+Markdown Read-Only is a read-only Markdown reader. Every other reader on the
 App Store is a file manager plus a share extension. The only angle where
 this app can stand out is **system preview**: tap Space on a `.md` in
 Files, or open a Markdown attachment in Mail, and the document renders
@@ -24,7 +24,7 @@ the extension needs to host. No duplication, no fork.
 
 **Decision**: `QLSupportedContentTypes = ["net.daringfireball.markdown"]` only.
 
-The app already imports this UTI in `SimpleMarkdown/Info.plist`:
+The app already imports this UTI in `MarkdownReadOnly/Info.plist`:
 
 ```xml
 <key>UTImportedTypeDeclarations</key>
@@ -84,15 +84,15 @@ Cannot be done without Xcode. The current project layout:
 
 ```
 project.pbxproj — 21 977 bytes, 3 targets:
-  - SimpleMarkdown         (PBXFileSystemSynchronizedRootGroup → SimpleMarkdown/)
-  - SimpleMarkdownTests    (PBXFileSystemSynchronizedRootGroup → SimpleMarkdownTests/)
-  - SimpleMarkdownUITests  (PBXFileSystemSynchronizedRootGroup → SimpleMarkdownUITests/)
+  - MarkdownReadOnly         (PBXFileSystemSynchronizedRootGroup → MarkdownReadOnly/)
+  - MarkdownReadOnlyTests    (PBXFileSystemSynchronizedRootGroup → MarkdownReadOnlyTests/)
+  - MarkdownReadOnlyUITests  (PBXFileSystemSynchronizedRootGroup → MarkdownReadOnlyUITests/)
 ```
 
 Adding a fourth target requires editing `project.pbxproj` to declare:
 
 - A new `PBXNativeTarget` with `productType = "com.apple.product-type.app-extension"`.
-- A new `PBXFileSystemSynchronizedRootGroup` for `SimpleMarkdownQuickLook/`.
+- A new `PBXFileSystemSynchronizedRootGroup` for `MarkdownReadOnlyQuickLook/`.
 - A new `PBXBuildFile` entry per shared source file
   (`MarkdownPreviewView.swift`, `MarkdownPreviewTheme.swift`,
   `CodeSyntaxHighlighter.swift`, `CodePalette.swift`, `EditorTheme.swift`).
@@ -148,7 +148,7 @@ tests over.
 ## Tâche 4 — Shared TextDecoding (BLOCKED on Tâche 1)
 
 Move `decode(_:)` and `droppingPartialScalar(_:)` from `DocumentLibrary`
-to a new `SimpleMarkdown/TextDecoding.swift`, member of both targets.
+to a new `MarkdownReadOnly/TextDecoding.swift`, member of both targets.
 The current `DocumentLibraryTests` tests that pin the UTF-8 trimming
 behaviour must be moved to a new `TextDecodingTests`, assertions
 unchanged.

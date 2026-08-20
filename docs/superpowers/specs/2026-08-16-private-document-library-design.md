@@ -2,11 +2,11 @@
 
 ## Objectif
 
-Au premier lancement, SimpleMarkdown affiche une bibliothèque vide. L’app ne recherche et n’affiche aucun fichier déjà présent sur l’iPhone. Chaque document visible est soit créé dans l’app, soit explicitement importé par l’utilisateur.
+Au premier lancement, MarkdownReadOnly affiche une bibliothèque vide. L’app ne recherche et n’affiche aucun fichier déjà présent sur l’iPhone. Chaque document visible est soit créé dans l’app, soit explicitement importé par l’utilisateur.
 
 ## Expérience utilisateur
 
-L’écran d’accueil présente la liste des documents gérés par SimpleMarkdown. Quand la liste est vide, il affiche un message explicatif et un bouton d’ajout.
+L’écran d’accueil présente la liste des documents gérés par MarkdownReadOnly. Quand la liste est vide, il affiche un message explicatif et un bouton d’ajout.
 
 Le bouton `+` propose deux actions :
 
@@ -47,7 +47,7 @@ Les écritures utilisent une opération atomique afin d’éviter un fichier par
 
 ## Persistance et confidentialité
 
-Le dossier de bibliothèque vit dans le conteneur `Documents` de SimpleMarkdown, exposé via l’app Fichiers grâce à `UIFileSharingEnabled` et `LSSupportsOpeningDocumentsInPlace`. L’app ne scanne jamais Fichiers, iCloud Drive ni les documents d’autres apps : elle ne fait qu’exposer son propre dossier. Les documents persistent entre les lancements et sont inclus dans les sauvegardes normales de l’appareil. Une migration unique déplace les notes préexistantes depuis `Application Support` au premier lancement de la version concernée.
+Le dossier de bibliothèque vit dans le conteneur `Documents` de MarkdownReadOnly, exposé via l’app Fichiers grâce à `UIFileSharingEnabled` et `LSSupportsOpeningDocumentsInPlace`. L’app ne scanne jamais Fichiers, iCloud Drive ni les documents d’autres apps : elle ne fait qu’exposer son propre dossier. Les documents persistent entre les lancements et sont inclus dans les sauvegardes normales de l’appareil. Une migration unique déplace les notes préexistantes depuis `Application Support` au premier lancement de la version concernée.
 
 ## Tests
 

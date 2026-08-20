@@ -4,33 +4,33 @@ Guidance for AI agents (Claude Code, Copilot, etc.) working in this repository.
 
 ## Project
 
-SimpleMarkdown — a minimalist, **read-only** Markdown reader for iOS built with SwiftUI. See [`docs/architecture.md`](docs/architecture.md) for the full module map, data flow, and design rationale.
+MarkdownReadOnly — a minimalist, **read-only** Markdown reader for iOS built with SwiftUI. See [`docs/architecture.md`](docs/architecture.md) for the full module map, data flow, and design rationale.
 
 ## Stack
 
 - Swift, SwiftUI, Foundation
-- Xcode project: `SimpleMarkdown.xcodeproj` (no workspace, no SPM at the project root)
+- Xcode project: `MarkdownReadOnly.xcodeproj` (no workspace, no SPM at the project root)
 - Swift Package dependency: `MarkdownUI` (resolved through Xcode)
-- iOS; custom fonts (`SimpleMarkdown/Fonts/`); `Info.plist` declares `UIAppFonts` and `UTImportedTypeDeclarations`
+- iOS; custom fonts (`MarkdownReadOnly/Fonts/`); `Info.plist` declares `UIAppFonts` and `UTImportedTypeDeclarations`
 
 ## Layout
 
 | Path | Contents |
 | --- | --- |
-| `SimpleMarkdown/` | App sources (library, reader, search, rendering) |
-| `SimpleMarkdownTests/` | XCTest unit tests |
-| `SimpleMarkdownUITests/` | XCUITest UI tests |
+| `MarkdownReadOnly/` | App sources (library, reader, search, rendering) |
+| `MarkdownReadOnlyTests/` | XCTest unit tests |
+| `MarkdownReadOnlyUITests/` | XCUITest UI tests |
 | `docs/` | `architecture.md` + `superpowers/` (specs, plans) |
 | `README.md` | User-facing overview |
 
 ## Build & test
 
-Open `SimpleMarkdown.xcodeproj` in Xcode. The shared scheme `SimpleMarkdown` is at `SimpleMarkdown.xcodeproj/xcshareddata/xcschemes/SimpleMarkdown.xcscheme` and includes both `SimpleMarkdownTests` and `SimpleMarkdownUITests`.
+Open `MarkdownReadOnly.xcodeproj` in Xcode. The shared scheme `MarkdownReadOnly` is at `MarkdownReadOnly.xcodeproj/xcshareddata/xcschemes/MarkdownReadOnly.xcscheme` and includes both `MarkdownReadOnlyTests` and `MarkdownReadOnlyUITests`.
 
 - Build: `⌘R` on an iOS simulator target (Xcode), or
   ```sh
   xcodebuild test \
-    -project SimpleMarkdown.xcodeproj -scheme SimpleMarkdown \
+    -project MarkdownReadOnly.xcodeproj -scheme MarkdownReadOnly \
     -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
     CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO DEVELOPMENT_TEAM=
   ```
@@ -51,7 +51,7 @@ If you cannot run Xcode, say so explicitly and do not claim verification.
 - **Accessibility identifiers** follow `dot.path` style (e.g. `library.add`, `search.field`, `document.share`). Reuse the pattern for new controls.
 - **Tests**: add or update XCTest cases for any logic change in `DocumentLibrary`, `DocumentNaming`, `MarkdownMetadata`, `RemoteMarkdownLoader`, `LibrarySearch`, `QueryParser`, `PlainText`, or `SearchIndex`. Add XCUITest cases for any user-visible flow change.
 - **Surgical changes**: match existing style, no inline comments inside function bodies, no speculative abstractions.
-- **Two-target rendering**: any new file added to the rendering stack (`MarkdownPreviewView`, `MarkdownPreviewTheme`, `CodeSyntaxHighlighter`, `CodePalette`, `EditorTheme`, or anything they grow into) must be evaluated for membership in the future `SimpleMarkdownQuickLook` extension target. If it is shared, the file belongs at the app-target root and the extension picks it up via target membership — no duplication. If a rendering asset (font, image, asset catalog) is used by the extension, it must be declared in the extension's own `Info.plist` (or asset catalog); `UIAppFonts` is per-bundle and does not inherit from the host app.
+- **Two-target rendering**: any new file added to the rendering stack (`MarkdownPreviewView`, `MarkdownPreviewTheme`, `CodeSyntaxHighlighter`, `CodePalette`, `EditorTheme`, or anything they grow into) must be evaluated for membership in the future `MarkdownReadOnlyQuickLook` extension target. If it is shared, the file belongs at the app-target root and the extension picks it up via target membership — no duplication. If a rendering asset (font, image, asset catalog) is used by the extension, it must be declared in the extension's own `Info.plist` (or asset catalog); `UIAppFonts` is per-bundle and does not inherit from the host app.
 
 ## Before claiming done
 

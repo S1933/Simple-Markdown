@@ -2,7 +2,7 @@
 
 ## Objectif
 
-Faire de SimpleMarkdown un lecteur Markdown pur. Toute modification en place (édition de texte, renommage) disparaît. Le document et son nom sont figés au moment où il entre dans la bibliothèque. Le bouton d’import unique est remplacé par trois sources d’ajout : copier-coller, URL distante, fichier local. Chaque source produit une copie privée et immuable.
+Faire de MarkdownReadOnly un lecteur Markdown pur. Toute modification en place (édition de texte, renommage) disparaît. Le document et son nom sont figés au moment où il entre dans la bibliothèque. Le bouton d’import unique est remplacé par trois sources d’ajout : copier-coller, URL distante, fichier local. Chaque source produit une copie privée et immuable.
 
 ## Sources d’ajout
 

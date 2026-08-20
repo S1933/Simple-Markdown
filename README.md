@@ -1,4 +1,4 @@
-# Simple Markdown
+# Markdown Read-Only
 
 Lecteur Markdown minimaliste pour iOS, développé avec SwiftUI.
 
@@ -12,7 +12,7 @@ Lecteur Markdown minimaliste pour iOS, développé avec SwiftUI.
 
 ## Installation
 
-1. Ouvrez `SimpleMarkdown.xcodeproj` dans Xcode.
+1. Ouvrez `MarkdownReadOnly.xcodeproj` dans Xcode.
 2. Sélectionnez une cible iOS.
 3. Lancez l’application avec `⌘R`.
 

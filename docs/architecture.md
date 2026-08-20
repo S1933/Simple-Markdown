@@ -1,4 +1,4 @@
-# SimpleMarkdown — Architecture
+# MarkdownReadOnly — Architecture
 
 A minimalist, **read-only** Markdown reader for iOS built with SwiftUI. Documents enter the library through one of three import sources and become immutable private copies. There is no in-place editing, renaming, or refresh.
 
@@ -6,18 +6,18 @@ A minimalist, **read-only** Markdown reader for iOS built with SwiftUI. Document
 
 | Target | Type | Role |
 | --- | --- | --- |
-| `SimpleMarkdown` | App | SwiftUI reader + library |
-| `SimpleMarkdownQuickLook` | Quick Look Preview Extension | System preview of `.md` files (planned, not yet created) |
-| `SimpleMarkdownTests` | Unit tests | XCTest, model/search/loader logic |
-| `SimpleMarkdownUITests` | UI tests | XCUITest, library + search flows |
+| `MarkdownReadOnly` | App | SwiftUI reader + library |
+| `MarkdownReadOnlyQuickLook` | Quick Look Preview Extension | System preview of `.md` files (planned, not yet created) |
+| `MarkdownReadOnlyTests` | Unit tests | XCTest, model/search/loader logic |
+| `MarkdownReadOnlyUITests` | UI tests | XCUITest, library + search flows |
 
-Single Xcode project: `SimpleMarkdown.xcodeproj`. External dependency: `MarkdownUI` (Swift Package) for parsing/rendering. Custom fonts in `SimpleMarkdown/Fonts/` (JetBrains Mono) registered via `UIAppFonts` in `Info.plist`. The future `SimpleMarkdownQuickLook` extension must declare `UIAppFonts` in its own `Info.plist` — `UIAppFonts` is per-bundle, and the extension's bundle does not inherit from the host app.
+Single Xcode project: `MarkdownReadOnly.xcodeproj`. External dependency: `MarkdownUI` (Swift Package) for parsing/rendering. Custom fonts in `MarkdownReadOnly/Fonts/` (JetBrains Mono) registered via `UIAppFonts` in `Info.plist`. The future `MarkdownReadOnlyQuickLook` extension must declare `UIAppFonts` in its own `Info.plist` — `UIAppFonts` is per-bundle, and the extension's bundle does not inherit from the host app.
 
 ## Module map
 
 ```
-SimpleMarkdown/
-├── SimpleMarkdownApp.swift      # @main entry; builds DocumentLibrary; presents LibraryView or error
+MarkdownReadOnly/
+├── MarkdownReadOnlyApp.swift      # @main entry; builds DocumentLibrary; presents LibraryView or error
 ├── DocumentLibrary.swift        # Sole system boundary over FileManager; immutable write surface
 │                               #   (LibraryDocument declared here as well)
 ├── DocumentNaming.swift         # Name derivation: H1 → suggestion → fallback, sanitized
@@ -49,8 +49,8 @@ SimpleMarkdown/
 ## Key data flow
 
 ### App startup
-`SimpleMarkdownApp.init()` constructs a `Result<DocumentLibrary, Error>`:
-- `--ui-testing` argument → `DocumentLibrary.uiTesting()` (isolated `Application Support/SimpleMarkdown-UITests/Documents`, wiped on each launch).
+`MarkdownReadOnlyApp.init()` constructs a `Result<DocumentLibrary, Error>`:
+- `--ui-testing` argument → `DocumentLibrary.uiTesting()` (isolated `Application Support/MarkdownReadOnly-UITests/Documents`, wiped on each launch).
 - `--ui-testing-library-failure` (DEBUG) → forced `.failure` to exercise `LibraryStartupErrorView`.
 - Otherwise → `DocumentLibrary.live()`.
 
@@ -65,7 +65,7 @@ Holds `rootURL` (the app's `Documents/` directory) and a `FileManager`. Write su
 
 - `documents()` lists regular files with a markdown extension, sorted by `modifiedAt` desc, then localized name asc. `title(for:)` reads the first 4 KiB and delegates to `MarkdownMetadata.title(from:)`, the same function used to derive file names (front matter ignored, code fences skipped). Titles are memoized across listings via a shared `TitleCache` keyed by URL+`modifiedAt`; a refresh of unchanged files skips the disk read. **Unique naming**: a numeric suffix (` 2`, ` 3`, …) is appended so no document is ever overwritten.
 
-**Legacy migration**: `migrateLegacyDocuments(from:to:)` moves files from the old `Application Support/SimpleMarkdown/Documents/` into `Documents/`, gated by `UserDefaults` key `SimpleMarkdown.documentsMigration.v1`.
+**Legacy migration**: `migrateLegacyDocuments(from:to:)` moves files from the old `Application Support/MarkdownReadOnly/Documents/` into `Documents/`, gated by `UserDefaults` key `MarkdownReadOnly.documentsMigration.v1`.
 
 `Info.plist` no longer exposes `UIFileSharingEnabled` / `LSSupportsOpeningDocumentsInPlace` — the library is private to the app.
 
@@ -106,7 +106,7 @@ The import stores a single immutable copy. No source URL, metadata, or refresh i
 
 ### Quick Look preview extension (planned)
 
-The future `SimpleMarkdownQuickLook` target hosts a `QLPreviewingController` that renders `.md` files when the user taps Space in Files or opens a Markdown attachment in Mail. It reuses the rendering code rather than forking it:
+The future `MarkdownReadOnlyQuickLook` target hosts a `QLPreviewingController` that renders `.md` files when the user taps Space in Files or opens a Markdown attachment in Mail. It reuses the rendering code rather than forking it:
 
 - **Shared in both targets** — `MarkdownPreviewView`, `MarkdownPreviewTheme`, `CodeSyntaxHighlighter`, `CodePalette`, `EditorTheme`, `TextDecoding`, `PreviewLoader`. None duplicated.
 - **Excluded from the extension** — `DocumentLibrary`, `SearchIndex`, `LibraryView`, `TitleCache`, and every view that touches the private library. The extension reads the file the system hands it and displays it; it never imports into or reads from the user's library directly. This preserves the "library is private to the app" rule.
@@ -121,8 +121,8 @@ The extension target does not exist yet — Xcode is required to create it. The 
 Value types are `nonisolated` / `Sendable`; `SearchIndex` is an `actor`. `DocumentLibrary` is `@unchecked Sendable` (immutable `rootURL` + `FileManager`). `RemoteMarkdownLoader` is `Sendable` via the `URLSessionProtocol` indirection.
 
 ## Testing strategy
-- **Unit (`SimpleMarkdownTests`)**: `DocumentNaming`, `DocumentLibrary.add/import/delete/migration`, `RemoteMarkdownLoader` (via stub `URLSessionProtocol`), `SearchIndex`, `LibrarySearch`, `QueryParser`, `RecentSearchesStore`, `CodeSyntaxHighlighter`, plus `SearchPerformanceTests` for read-count/regression bounds.
-- **UI (`SimpleMarkdownUITests`)**: launch with `--ui-testing`; assert the three `+` actions, paste-creates-opens, no `document.editor` surface, search entry and results flows.
+- **Unit (`MarkdownReadOnlyTests`)**: `DocumentNaming`, `DocumentLibrary.add/import/delete/migration`, `RemoteMarkdownLoader` (via stub `URLSessionProtocol`), `SearchIndex`, `LibrarySearch`, `QueryParser`, `RecentSearchesStore`, `CodeSyntaxHighlighter`, plus `SearchPerformanceTests` for read-count/regression bounds.
+- **UI (`MarkdownReadOnlyUITests`)**: launch with `--ui-testing`; assert the three `+` actions, paste-creates-opens, no `document.editor` surface, search entry and results flows.
 
 Run all tests from Xcode with `⌘U`.
 
