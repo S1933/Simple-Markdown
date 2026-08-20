@@ -8,7 +8,7 @@ import Foundation
 enum PreviewLoader {
     static let maxBytes = 1024 * 1024
 
-    static let truncationNotice = "\n\n---\n\n*Aperçu tronqué. Ouvrez le document dans Simple Markdown pour le lire en entier.*"
+    static let truncationNotice = "\n\n---\n\n*Aperçu tronqué. Ouvrez le document dans Markdown Read-Only pour le lire en entier.*"
 
     static func text(at url: URL) throws -> String {
         let accessed = url.startAccessingSecurityScopedResource()

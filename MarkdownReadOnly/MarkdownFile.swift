@@ -1,6 +1,6 @@
 //
 //  MarkdownFile.swift
-//  SimpleMarkdown
+//  MarkdownReadOnly
 //
 //  The document model. Deliberately dumb: a .md file is a String.
 //  No proprietary format, no wrapper, no metadata sidecar. A file

@@ -1,6 +1,6 @@
 import XCTest
 import SwiftUI
-@testable import SimpleMarkdown
+@testable import MarkdownReadOnly
 
 /// Guards shared between the app and the future Quick Look preview extension.
 /// These tests are weak: they cannot prove visual identity, only that the

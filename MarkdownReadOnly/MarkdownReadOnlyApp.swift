@@ -1,6 +1,6 @@
 //
-//  SimpleMarkdownApp.swift
-//  SimpleMarkdown
+//  MarkdownReadOnlyApp.swift
+//  MarkdownReadOnly
 //
 //  Entry point for the app-owned Markdown library.
 //
@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct SimpleMarkdownApp: App {
+struct MarkdownReadOnlyApp: App {
     private let library: Result<DocumentLibrary, Error>
 
     init() {

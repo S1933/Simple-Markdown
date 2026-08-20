@@ -1,5 +1,5 @@
 import XCTest
-@testable import SimpleMarkdown
+@testable import MarkdownReadOnly
 
 private final class StubSession: URLSessionProtocol {
     nonisolated(unsafe) var response: (Data, URLResponse)?

@@ -1,5 +1,5 @@
 import XCTest
-@testable import SimpleMarkdown
+@testable import MarkdownReadOnly
 
 final class PlainTextTests: XCTestCase {
     func testHeadingsAndListMarkersAreStripped() {

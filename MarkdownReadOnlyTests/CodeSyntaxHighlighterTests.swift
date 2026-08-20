@@ -1,6 +1,6 @@
 import XCTest
 import UIKit
-@testable import SimpleMarkdown
+@testable import MarkdownReadOnly
 
 @MainActor
 final class CodeSyntaxHighlighterTests: XCTestCase {
