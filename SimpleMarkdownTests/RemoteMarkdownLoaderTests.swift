@@ -4,15 +4,24 @@ import XCTest
 private final class StubSession: URLSessionProtocol {
     nonisolated(unsafe) var response: (Data, URLResponse)?
     nonisolated(unsafe) var error: Error?
+    nonisolated(unsafe) var chunkSize: Int = 64 * 1024
+    nonisolated(unsafe) private(set) var chunksYielded: Int = 0
 
     func stream(
         for request: URLRequest
-    ) async throws -> (AsyncThrowingStream<UInt8, Error>, URLResponse) {
+    ) async throws -> (AsyncThrowingStream<Data, Error>, URLResponse) {
         if let error { throw error }
         let body = response!.0
         let response = response!.1
-        let stream = AsyncThrowingStream<UInt8, Error> { continuation in
-            for byte in body { continuation.yield(byte) }
+        let chunkSize = Swift.max(1, chunkSize)
+        let stream = AsyncThrowingStream<Data, Error> { continuation in
+            var index = 0
+            while index < body.count {
+                let end = Swift.min(index + chunkSize, body.count)
+                continuation.yield(body[index..<end])
+                chunksYielded += 1
+                index = end
+            }
             continuation.finish()
         }
         return (stream, response)
@@ -159,5 +168,57 @@ final class RemoteMarkdownLoaderTests: XCTestCase {
         await measure {
             _ = try? await loader.fetch(url)
         }
+    }
+
+    func testAssemblesMultipleChunksInOrder() async throws {
+        let session = StubSession()
+        session.chunkSize = 8
+        session.response = (
+            Data("# Title\n\nBody text that spans several chunks.".utf8),
+            makeResponse(headers: ["Content-Type": "text/markdown"])
+        )
+        let loader = RemoteMarkdownLoader(session: session)
+        let text = try await loader.fetch(URL(string: "https://example.com/note.md")!)
+        XCTAssertEqual(text, "# Title\n\nBody text that spans several chunks.")
+    }
+
+    func testRejectsOversizeCrossedMidChunk() async {
+        let session = StubSession()
+        session.chunkSize = 512 * 1024
+        session.response = (
+            Data(repeating: 0x41, count: 3 * 1024 * 1024),
+            makeResponse(headers: ["Content-Type": "text/markdown"])
+        )
+        let loader = RemoteMarkdownLoader(session: session)
+        do {
+            _ = try await loader.fetch(URL(string: "https://example.com/note.md")!)
+            XCTFail("expected rejection")
+        } catch RemoteMarkdownLoader.LoadError.tooLarge {
+            // expected
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    func testAbortsDownloadWhenCapIsBreachedMidStream() async throws {
+        let session = StubSession()
+        session.chunkSize = 1024
+        let big = Data(repeating: 0x41, count: 8 * 1024 * 1024)
+        session.response = (
+            big,
+            makeResponse(headers: ["Content-Type": "text/markdown"])
+        )
+        let loader = RemoteMarkdownLoader(session: session)
+        do {
+            _ = try await loader.fetch(URL(string: "https://example.com/big.md")!)
+            XCTFail("expected rejection")
+        } catch RemoteMarkdownLoader.LoadError.tooLarge {
+            // expected
+        }
+        XCTAssertLessThan(
+            session.chunksYielded,
+            big.count / session.chunkSize,
+            "stub should stop emitting once the loader aborts the stream"
+        )
     }
 }

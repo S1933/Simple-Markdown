@@ -3,26 +3,78 @@ import Foundation
 protocol URLSessionProtocol: Sendable {
     func stream(
         for request: URLRequest
-    ) async throws -> (AsyncThrowingStream<UInt8, Error>, URLResponse)
+    ) async throws -> (AsyncThrowingStream<Data, Error>, URLResponse)
 }
 
 extension URLSession: URLSessionProtocol {
     func stream(
         for request: URLRequest
-    ) async throws -> (AsyncThrowingStream<UInt8, Error>, URLResponse) {
-        let (bytes, response) = try await self.bytes(for: request)
-        let stream = AsyncThrowingStream<UInt8, Error> { continuation in
-            let task = Task {
-                do {
-                    for try await byte in bytes { continuation.yield(byte) }
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
+    ) async throws -> (AsyncThrowingStream<Data, Error>, URLResponse) {
+        let (stream, response): (AsyncThrowingStream<Data, Error>, URLResponse) =
+            try await withCheckedThrowingContinuation { continuation in
+                let delegate = ChunkStreamDelegate { result in
+                    switch result {
+                    case .success(let payload):
+                        continuation.resume(returning: (payload.stream, payload.response))
+                    case .failure(let error):
+                        continuation.resume(throwing: error)
+                    }
                 }
+                let session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
+                let task = session.dataTask(with: request)
+                delegate.task = task
+                task.resume()
             }
-            continuation.onTermination = { _ in task.cancel() }
-        }
         return (stream, response)
+    }
+}
+
+private final class ChunkStreamDelegate: NSObject, URLSessionDataDelegate, @unchecked Sendable {
+    private let onCompletion: (Result<(stream: AsyncThrowingStream<Data, Error>, response: URLResponse), Error>) -> Void
+    var task: URLSessionDataTask?
+    private var continuation: AsyncThrowingStream<Data, Error>.Continuation?
+    private var hasResumed = false
+
+    init(onCompletion: @escaping (Result<(stream: AsyncThrowingStream<Data, Error>, response: URLResponse), Error>) -> Void) {
+        self.onCompletion = onCompletion
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        dataTask: URLSessionDataTask,
+        didReceive response: URLResponse,
+        completionHandler: @escaping (URLSession.ResponseDisposition) -> Void
+    ) {
+        guard !hasResumed else { return }
+        hasResumed = true
+        let stream = AsyncThrowingStream<Data, Error> { streamContinuation in
+            self.continuation = streamContinuation
+            streamContinuation.onTermination = { @Sendable _ in
+                task.cancel()
+            }
+        }
+        onCompletion(.success((stream, response)))
+        completionHandler(.allow)
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        dataTask: URLSessionDataTask,
+        didReceive data: Data
+    ) {
+        continuation?.yield(data)
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didCompleteWithError error: Error?
+    ) {
+        if let error {
+            continuation?.finish(throwing: error)
+        } else {
+            continuation?.finish()
+        }
     }
 }
 
@@ -67,8 +119,8 @@ nonisolated struct RemoteMarkdownLoader: Sendable {
 
         var data = Data()
         data.reserveCapacity(min(max(Int(http.expectedContentLength), 0), Self.maxBytes))
-        for try await byte in bytes {
-            data.append(byte)
+        for try await chunk in bytes {
+            data.append(chunk)
             guard data.count <= Self.maxBytes else { throw LoadError.tooLarge }
         }
 
@@ -135,7 +187,7 @@ private final class UIStubSession: URLSessionProtocol {
 
     func stream(
         for request: URLRequest
-    ) async throws -> (AsyncThrowingStream<UInt8, Error>, URLResponse) {
+    ) async throws -> (AsyncThrowingStream<Data, Error>, URLResponse) {
         let data = Data(text.utf8)
         let response = HTTPURLResponse(
             url: request.url ?? URL(string: "https://example.com/")!,
@@ -143,8 +195,8 @@ private final class UIStubSession: URLSessionProtocol {
             httpVersion: "HTTP/1.1",
             headerFields: ["Content-Type": "text/markdown"]
         )!
-        let stream = AsyncThrowingStream<UInt8, Error> { continuation in
-            for byte in data { continuation.yield(byte) }
+        let stream = AsyncThrowingStream<Data, Error> { continuation in
+            continuation.yield(data)
             continuation.finish()
         }
         return (stream, response)
