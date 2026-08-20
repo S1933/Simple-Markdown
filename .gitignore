@@ -14,5 +14,5 @@ xcuserdata/
 .swiftpm/
 
 # Secrets
-*.xcconfig.local
+*.local.xcconfig
 *.env
