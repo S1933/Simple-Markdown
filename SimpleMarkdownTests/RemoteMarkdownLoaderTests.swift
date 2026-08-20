@@ -147,4 +147,17 @@ final class RemoteMarkdownLoaderTests: XCTestCase {
             XCTFail("unexpected error: \(error)")
         }
     }
+
+    func testFetchThroughputOnLargePayload() async {
+        let session = StubSession()
+        session.response = (
+            Data(repeating: 0x41, count: 1024 * 1024),
+            makeResponse(headers: ["Content-Type": "text/markdown"])
+        )
+        let loader = RemoteMarkdownLoader(session: session)
+        let url = URL(string: "https://example.com/big.md")!
+        await measure {
+            _ = try? await loader.fetch(url)
+        }
+    }
 }
