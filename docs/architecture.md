@@ -62,7 +62,7 @@ Holds `rootURL` (the app's `Documents/` directory) and a `FileManager`. Write su
 - `delete(_:)` — removes a managed URL.
 - `read(_:)` — UTF-8 (with ISO-Latin-1 fallback) read; rejects URLs outside `rootURL` via `managedURL(_:)`.
 
-`documents()` lists regular files with a markdown extension, sorted by `modifiedAt` desc, then localized name asc. `title(for:)` reads the first 4 KiB and delegates to `MarkdownMetadata.title(from:)`, the same function used to derive file names (front matter ignored, code fences skipped). **Unique naming**: a numeric suffix (` 2`, ` 3`, …) is appended so no document is ever overwritten.
+- `documents()` lists regular files with a markdown extension, sorted by `modifiedAt` desc, then localized name asc. `title(for:)` reads the first 4 KiB and delegates to `MarkdownMetadata.title(from:)`, the same function used to derive file names (front matter ignored, code fences skipped). Titles are memoized across listings via a shared `TitleCache` keyed by URL+`modifiedAt`; a refresh of unchanged files skips the disk read. **Unique naming**: a numeric suffix (` 2`, ` 3`, …) is appended so no document is ever overwritten.
 
 **Legacy migration**: `migrateLegacyDocuments(from:to:)` moves files from the old `Application Support/SimpleMarkdown/Documents/` into `Documents/`, gated by `UserDefaults` key `SimpleMarkdown.documentsMigration.v1`.
 
@@ -97,10 +97,10 @@ The import stores a single immutable copy. No source URL, metadata, or refresh i
 `DocumentReaderView` loads text once via `library.read(document.url)` in `.task`, then renders `MarkdownPreviewView(text:)`. No mutable text state, no write actions. Toolbar exposes only `ShareLink(item: document.url)`.
 
 ### Search
-- `SearchIndex` is an `actor` caching `plainText` per document URL keyed by `modifiedAt`; invalidates on change, prunes deleted docs. Reads are capped at 256 KiB per document via `DocumentLibrary.readPrefix(_:maxBytes:)`, which never loads more than that from disk. `results(for:in:)` checks `Task.checkCancellation()` and yields every 25 documents so the actor stays responsive. Exposes `readCount` for tests.
+- `SearchIndex` is an `actor` caching `plainText` per document URL keyed by `modifiedAt`; invalidates on change, prunes deleted docs (skipped when the cache cardinality is at or below the survivor count). Reads are capped at 256 KiB per document via `DocumentLibrary.readPrefix(_:maxBytes:)`, which never loads more than that from disk. `results(for:in:)` checks `Task.checkCancellation()` and yields every 25 documents so the actor stays responsive. Exposes `readCount` for tests. `PlainText.strip` runs the inline rules once on the joined document (line-level fences + heading/list markers are parsed by hand, no per-line regex), so an empty result stays O(lines) and the index can absorb 256 KiB documents without burning cycles on per-line bridge allocations.
 - `QueryParser.parse(_:)` tokenizes on spaces (respects `"…"`), matches qualifiers case- and diacritic-insensitively (`title`, `content`, `modified`; French forms `titre`, `contenu`, `modifie` kept as aliases). Date values support `<`, `<=`, `>`, `>=` comparators and bare `YYYY-MM-DD`. Unqualified tokens become `freeText`.
 - `ParsedQuery.matches(_:plainText:)` enforces the half-open date interval `[modifiedAfter, modifiedBefore)`, then `allSatisfy` over title, content, and free-text terms.
-- `LibrarySearch.ranges(in:query:)` does case- and diacritic-insensitive locale-aware matching. `snippet(in:terms:limit:)` produces a 160-char window around the earliest hit, snapped to word boundaries with `…` ellipses.
+- `LibrarySearch.ranges(in:query:)` does case- and diacritic-insensitive locale-aware matching. `firstRange(in:query:)` is the same scan returning the earliest hit (or `nil`), which `contains(_:query:)` rides on to answer yes/no without allocating an array. `snippet(in:terms:limit:)` produces a 160-char window around the earliest hit, snapped to word boundaries with `…` ellipses.
 - `SearchView` debounces 200 ms, cancels prior `Task`, and records the query in `RecentSearchesStore` on submit or selection. `QualifierChips` appear when the field is focused. Presented as `fullScreenCover` on compact width, `sheet` otherwise.
 
 ## Concurrency
