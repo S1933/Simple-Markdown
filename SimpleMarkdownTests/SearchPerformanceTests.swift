@@ -56,4 +56,45 @@ final class SearchPerformanceTests: XCTestCase {
         XCTAssertEqual(results.count, 200)
         XCTAssertLessThan(elapsed, .seconds(2))
     }
+
+    /// 120 documents of 128 KiB: order of magnitude of a library fed for
+    /// several months. The budget is deliberately generous and acts as an
+    /// anti-regression guard, not a performance target.
+    func testFirstSearchOverRealisticLibrary() async throws {
+        for position in 1...120 {
+            try write(
+                PerformanceFixtures.markdownDocument(targetBytes: 128 * 1024, seed: position),
+                named: "doc\(position).md"
+            )
+        }
+        let index = SearchIndex(library: library)
+        let documents = try library.documents()
+
+        let started = ContinuousClock.now
+        let results = try await index.results(for: QueryParser.parse("important"), in: documents)
+        let elapsed = ContinuousClock.now - started
+
+        XCTAssertGreaterThanOrEqual(results.count, 120,
+            "every fixture contains the term 'important' so all 120 docs should match")
+        XCTAssertLessThan(elapsed, .seconds(10))
+    }
+
+    func testStripThroughputOnLargeDocument() {
+        let markdown = PerformanceFixtures.markdownDocument(targetBytes: 256 * 1024, seed: 1)
+        measure {
+            _ = PlainText.strip(markdown)
+        }
+    }
+
+    func testListingThroughputOnLargeLibrary() throws {
+        for position in 1...300 {
+            try write(
+                PerformanceFixtures.markdownDocument(targetBytes: 32 * 1024, seed: position),
+                named: "doc\(position).md"
+            )
+        }
+        measure {
+            _ = try? library.documents()
+        }
+    }
 }
