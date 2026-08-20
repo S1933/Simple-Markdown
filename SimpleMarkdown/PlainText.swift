@@ -50,9 +50,12 @@ nonisolated enum PlainText {
     }
 
     private static func applyInlineRules(to line: String) -> String {
-        let range = NSRange(location: 0, length: (line as NSString).length)
         return inlineRules.reduce(line) { text, rule in
-            rule.expression.stringByReplacingMatches(
+            // Recompute the range on each iteration: earlier rules can shrink
+            // the string, so a range computed on the input would point past
+            // the end of the new string and trigger NSRangeException.
+            let range = NSRange(location: 0, length: (text as NSString).length)
+            return rule.expression.stringByReplacingMatches(
                 in: text,
                 range: range,
                 withTemplate: rule.template
