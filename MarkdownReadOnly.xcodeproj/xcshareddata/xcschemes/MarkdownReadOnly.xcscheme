@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "E84F7E1A30324BA200CF4814"
-               BuildableName = "SimpleMarkdown.app"
-               BlueprintName = "SimpleMarkdown"
-               ReferencedContainer = "container:SimpleMarkdown.xcodeproj">
+               BuildableName = "MarkdownReadOnly.app"
+               BlueprintName = "MarkdownReadOnly"
+               ReferencedContainer = "container:MarkdownReadOnly.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A10000000000000000000005"
-               BuildableName = "SimpleMarkdownTests.xctest"
-               BlueprintName = "SimpleMarkdownTests"
-               ReferencedContainer = "container:SimpleMarkdown.xcodeproj">
+               BuildableName = "MarkdownReadOnlyTests.xctest"
+               BlueprintName = "MarkdownReadOnlyTests"
+               ReferencedContainer = "container:MarkdownReadOnly.xcodeproj">
             </BuildableReference>
          </TestableReference>
          <TestableReference
@@ -43,9 +43,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B10000000000000000000005"
-               BuildableName = "SimpleMarkdownUITests.xctest"
-               BlueprintName = "SimpleMarkdownUITests"
-               ReferencedContainer = "container:SimpleMarkdown.xcodeproj">
+               BuildableName = "MarkdownReadOnlyUITests.xctest"
+               BlueprintName = "MarkdownReadOnlyUITests"
+               ReferencedContainer = "container:MarkdownReadOnly.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -65,9 +65,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E84F7E1A30324BA200CF4814"
-            BuildableName = "SimpleMarkdown.app"
-            BlueprintName = "SimpleMarkdown"
-            ReferencedContainer = "container:SimpleMarkdown.xcodeproj">
+            BuildableName = "MarkdownReadOnly.app"
+            BlueprintName = "MarkdownReadOnly"
+            ReferencedContainer = "container:MarkdownReadOnly.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -82,9 +82,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E84F7E1A30324BA200CF4814"
-            BuildableName = "SimpleMarkdown.app"
-            BlueprintName = "SimpleMarkdown"
-            ReferencedContainer = "container:SimpleMarkdown.xcodeproj">
+            BuildableName = "MarkdownReadOnly.app"
+            BlueprintName = "MarkdownReadOnly"
+            ReferencedContainer = "container:MarkdownReadOnly.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

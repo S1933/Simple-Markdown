@@ -16,50 +16,50 @@
 			containerPortal = E84F7E1330324BA200CF4814 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = E84F7E1A30324BA200CF4814;
-			remoteInfo = SimpleMarkdown;
+			remoteInfo = MarkdownReadOnly;
 		};
 		B10000000000000000000002 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E84F7E1330324BA200CF4814 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = E84F7E1A30324BA200CF4814;
-			remoteInfo = SimpleMarkdown;
+			remoteInfo = MarkdownReadOnly;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		A10000000000000000000001 /* SimpleMarkdownTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimpleMarkdownTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		B10000000000000000000001 /* SimpleMarkdownUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimpleMarkdownUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		E84F7E1B30324BA200CF4814 /* SimpleMarkdown.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimpleMarkdown.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000001 /* MarkdownReadOnlyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownReadOnlyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000001 /* MarkdownReadOnlyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownReadOnlyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E84F7E1B30324BA200CF4814 /* MarkdownReadOnly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MarkdownReadOnly.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		E84F7E2730324BA300CF4814 /* Exceptions for "SimpleMarkdown" folder in "SimpleMarkdown" target */ = {
+		E84F7E2730324BA300CF4814 /* Exceptions for "MarkdownReadOnly" folder in "MarkdownReadOnly" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = E84F7E1A30324BA200CF4814 /* SimpleMarkdown */;
+			target = E84F7E1A30324BA200CF4814 /* MarkdownReadOnly */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A10000000000000000000003 /* SimpleMarkdownTests */ = {
+		A10000000000000000000003 /* MarkdownReadOnlyTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SimpleMarkdownTests;
+			path = MarkdownReadOnlyTests;
 			sourceTree = "<group>";
 		};
-		B10000000000000000000003 /* SimpleMarkdownUITests */ = {
+		B10000000000000000000003 /* MarkdownReadOnlyUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SimpleMarkdownUITests;
+			path = MarkdownReadOnlyUITests;
 			sourceTree = "<group>";
 		};
-		E84F7E1D30324BA200CF4814 /* SimpleMarkdown */ = {
+		E84F7E1D30324BA200CF4814 /* MarkdownReadOnly */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				E84F7E2730324BA300CF4814 /* Exceptions for "SimpleMarkdown" folder in "SimpleMarkdown" target */,
+				E84F7E2730324BA300CF4814 /* Exceptions for "MarkdownReadOnly" folder in "MarkdownReadOnly" target */,
 			);
-			path = SimpleMarkdown;
+			path = MarkdownReadOnly;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -93,9 +93,9 @@
 		E84F7E1230324BA200CF4814 = {
 			isa = PBXGroup;
 			children = (
-				E84F7E1D30324BA200CF4814 /* SimpleMarkdown */,
-				A10000000000000000000003 /* SimpleMarkdownTests */,
-				B10000000000000000000003 /* SimpleMarkdownUITests */,
+				E84F7E1D30324BA200CF4814 /* MarkdownReadOnly */,
+				A10000000000000000000003 /* MarkdownReadOnlyTests */,
+				B10000000000000000000003 /* MarkdownReadOnlyUITests */,
 				E84F7E1C30324BA200CF4814 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -103,9 +103,9 @@
 		E84F7E1C30324BA200CF4814 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				E84F7E1B30324BA200CF4814 /* SimpleMarkdown.app */,
-				A10000000000000000000001 /* SimpleMarkdownTests.xctest */,
-				B10000000000000000000001 /* SimpleMarkdownUITests.xctest */,
+				E84F7E1B30324BA200CF4814 /* MarkdownReadOnly.app */,
+				A10000000000000000000001 /* MarkdownReadOnlyTests.xctest */,
+				B10000000000000000000001 /* MarkdownReadOnlyUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -113,9 +113,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A10000000000000000000005 /* SimpleMarkdownTests */ = {
+		A10000000000000000000005 /* MarkdownReadOnlyTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A10000000000000000000006 /* Build configuration list for PBXNativeTarget "SimpleMarkdownTests" */;
+			buildConfigurationList = A10000000000000000000006 /* Build configuration list for PBXNativeTarget "MarkdownReadOnlyTests" */;
 			buildPhases = (
 				A10000000000000000000007 /* Sources */,
 				A10000000000000000000004 /* Frameworks */,
@@ -127,16 +127,16 @@
 				A10000000000000000000009 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				A10000000000000000000003 /* SimpleMarkdownTests */,
+				A10000000000000000000003 /* MarkdownReadOnlyTests */,
 			);
-			name = SimpleMarkdownTests;
-			productName = SimpleMarkdownTests;
-			productReference = A10000000000000000000001 /* SimpleMarkdownTests.xctest */;
+			name = MarkdownReadOnlyTests;
+			productName = MarkdownReadOnlyTests;
+			productReference = A10000000000000000000001 /* MarkdownReadOnlyTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		B10000000000000000000005 /* SimpleMarkdownUITests */ = {
+		B10000000000000000000005 /* MarkdownReadOnlyUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B10000000000000000000006 /* Build configuration list for PBXNativeTarget "SimpleMarkdownUITests" */;
+			buildConfigurationList = B10000000000000000000006 /* Build configuration list for PBXNativeTarget "MarkdownReadOnlyUITests" */;
 			buildPhases = (
 				B10000000000000000000007 /* Sources */,
 				B10000000000000000000004 /* Frameworks */,
@@ -148,16 +148,16 @@
 				B10000000000000000000009 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				B10000000000000000000003 /* SimpleMarkdownUITests */,
+				B10000000000000000000003 /* MarkdownReadOnlyUITests */,
 			);
-			name = SimpleMarkdownUITests;
-			productName = SimpleMarkdownUITests;
-			productReference = B10000000000000000000001 /* SimpleMarkdownUITests.xctest */;
+			name = MarkdownReadOnlyUITests;
+			productName = MarkdownReadOnlyUITests;
+			productReference = B10000000000000000000001 /* MarkdownReadOnlyUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
-		E84F7E1A30324BA200CF4814 /* SimpleMarkdown */ = {
+		E84F7E1A30324BA200CF4814 /* MarkdownReadOnly */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = E84F7E2830324BA300CF4814 /* Build configuration list for PBXNativeTarget "SimpleMarkdown" */;
+			buildConfigurationList = E84F7E2830324BA300CF4814 /* Build configuration list for PBXNativeTarget "MarkdownReadOnly" */;
 			buildPhases = (
 				E84F7E1730324BA200CF4814 /* Sources */,
 				E84F7E1830324BA200CF4814 /* Frameworks */,
@@ -168,14 +168,14 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				E84F7E1D30324BA200CF4814 /* SimpleMarkdown */,
+				E84F7E1D30324BA200CF4814 /* MarkdownReadOnly */,
 			);
-			name = SimpleMarkdown;
+			name = MarkdownReadOnly;
 			packageProductDependencies = (
 				393B252ABED7F92B8AF4E6AE /* MarkdownUI */,
 			);
-			productName = SimpleMarkdown;
-			productReference = E84F7E1B30324BA200CF4814 /* SimpleMarkdown.app */;
+			productName = MarkdownReadOnly;
+			productReference = E84F7E1B30324BA200CF4814 /* MarkdownReadOnly.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -201,7 +201,7 @@
 					};
 				};
 			};
-			buildConfigurationList = E84F7E1630324BA200CF4814 /* Build configuration list for PBXProject "SimpleMarkdown" */;
+			buildConfigurationList = E84F7E1630324BA200CF4814 /* Build configuration list for PBXProject "MarkdownReadOnly" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -218,9 +218,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				E84F7E1A30324BA200CF4814 /* SimpleMarkdown */,
-				A10000000000000000000005 /* SimpleMarkdownTests */,
-				B10000000000000000000005 /* SimpleMarkdownUITests */,
+				E84F7E1A30324BA200CF4814 /* MarkdownReadOnly */,
+				A10000000000000000000005 /* MarkdownReadOnlyTests */,
+				B10000000000000000000005 /* MarkdownReadOnlyUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -276,12 +276,12 @@
 /* Begin PBXTargetDependency section */
 		A10000000000000000000009 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = E84F7E1A30324BA200CF4814 /* SimpleMarkdown */;
+			target = E84F7E1A30324BA200CF4814 /* MarkdownReadOnly */;
 			targetProxy = A10000000000000000000002 /* PBXContainerItemProxy */;
 		};
 		B10000000000000000000009 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = E84F7E1A30324BA200CF4814 /* SimpleMarkdown */;
+			target = E84F7E1A30324BA200CF4814 /* MarkdownReadOnly */;
 			targetProxy = B10000000000000000000002 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -297,12 +297,12 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = s1933.SimpleMarkdownTests;
+				PRODUCT_BUNDLE_IDENTIFIER = s1933.MarkdownReadOnlyTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SimpleMarkdown.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SimpleMarkdown";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MarkdownReadOnly.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MarkdownReadOnly";
 			};
 			name = Debug;
 		};
@@ -316,12 +316,12 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = s1933.SimpleMarkdownTests;
+				PRODUCT_BUNDLE_IDENTIFIER = s1933.MarkdownReadOnlyTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SimpleMarkdown.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SimpleMarkdown";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MarkdownReadOnly.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MarkdownReadOnly";
 			};
 			name = Release;
 		};
@@ -334,12 +334,12 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = s1933.SimpleMarkdownUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = s1933.MarkdownReadOnlyUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = SimpleMarkdown;
+				TEST_TARGET_NAME = MarkdownReadOnly;
 			};
 			name = Debug;
 		};
@@ -352,12 +352,12 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = s1933.SimpleMarkdownUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = s1933.MarkdownReadOnlyUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = SimpleMarkdown;
+				TEST_TARGET_NAME = MarkdownReadOnly;
 			};
 			name = Release;
 		};
@@ -371,7 +371,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = SimpleMarkdown/Info.plist;
+				INFOPLIST_FILE = MarkdownReadOnly/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -382,7 +382,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = s1933.SimpleMarkdown;
+				PRODUCT_BUNDLE_IDENTIFIER = s1933.MarkdownReadOnly;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -404,7 +404,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = SimpleMarkdown/Info.plist;
+				INFOPLIST_FILE = MarkdownReadOnly/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -415,7 +415,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = s1933.SimpleMarkdown;
+				PRODUCT_BUNDLE_IDENTIFIER = s1933.MarkdownReadOnly;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -551,7 +551,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A10000000000000000000006 /* Build configuration list for PBXNativeTarget "SimpleMarkdownTests" */ = {
+		A10000000000000000000006 /* Build configuration list for PBXNativeTarget "MarkdownReadOnlyTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A1000000000000000000000A /* Debug */,
@@ -560,7 +560,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B10000000000000000000006 /* Build configuration list for PBXNativeTarget "SimpleMarkdownUITests" */ = {
+		B10000000000000000000006 /* Build configuration list for PBXNativeTarget "MarkdownReadOnlyUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B1000000000000000000000A /* Debug */,
@@ -569,7 +569,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		E84F7E1630324BA200CF4814 /* Build configuration list for PBXProject "SimpleMarkdown" */ = {
+		E84F7E1630324BA200CF4814 /* Build configuration list for PBXProject "MarkdownReadOnly" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E84F7E2B30324BA300CF4814 /* Debug */,
@@ -578,7 +578,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		E84F7E2830324BA300CF4814 /* Build configuration list for PBXNativeTarget "SimpleMarkdown" */ = {
+		E84F7E2830324BA300CF4814 /* Build configuration list for PBXNativeTarget "MarkdownReadOnly" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E84F7E2930324BA300CF4814 /* Debug */,
