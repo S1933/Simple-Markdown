@@ -55,7 +55,7 @@ nonisolated struct DocumentLibrary: @unchecked Sendable {
         )
         try migrateLegacyDocuments(
             from: applicationSupport
-                .appendingPathComponent("SimpleMarkdown", isDirectory: true)
+                .appendingPathComponent("SimpleMarkdown", isDirectory: true) // legacy on-disk path; preserved across rename
                 .appendingPathComponent("Documents", isDirectory: true),
             to: documents,
             fileManager: fileManager,
@@ -73,7 +73,7 @@ nonisolated struct DocumentLibrary: @unchecked Sendable {
         fileManager: FileManager,
         defaults: UserDefaults
     ) throws {
-        let key = "SimpleMarkdown.documentsMigration.v1"
+        let key = "SimpleMarkdown.documentsMigration.v1" // preserved for migration of existing installs
         guard !defaults.bool(forKey: key) else { return }
         try fileManager.createDirectory(at: destinationURL, withIntermediateDirectories: true)
         if fileManager.fileExists(atPath: legacyURL.path) {
@@ -109,7 +109,7 @@ nonisolated struct DocumentLibrary: @unchecked Sendable {
             create: true
         )
         let testRoot = applicationSupport
-            .appendingPathComponent("SimpleMarkdown-UITests", isDirectory: true)
+            .appendingPathComponent("SimpleMarkdown-UITests", isDirectory: true) // stable scratch dir name
         if fileManager.fileExists(atPath: testRoot.path) {
             try fileManager.removeItem(at: testRoot)
         }

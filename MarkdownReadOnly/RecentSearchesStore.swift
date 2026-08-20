@@ -2,7 +2,7 @@ import Foundation
 
 @Observable
 final class RecentSearchesStore {
-    private static let key = "SimpleMarkdown.recentSearches.v1"
+    private static let key = "SimpleMarkdown.recentSearches.v1" // preserved for stable UserDefaults across rename
     private static let limit = 10
 
     private let defaults: UserDefaults
