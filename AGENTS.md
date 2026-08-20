@@ -51,6 +51,7 @@ If you cannot run Xcode, say so explicitly and do not claim verification.
 - **Accessibility identifiers** follow `dot.path` style (e.g. `library.add`, `search.field`, `document.share`). Reuse the pattern for new controls.
 - **Tests**: add or update XCTest cases for any logic change in `DocumentLibrary`, `DocumentNaming`, `MarkdownMetadata`, `RemoteMarkdownLoader`, `LibrarySearch`, `QueryParser`, `PlainText`, or `SearchIndex`. Add XCUITest cases for any user-visible flow change.
 - **Surgical changes**: match existing style, no inline comments inside function bodies, no speculative abstractions.
+- **Two-target rendering**: any new file added to the rendering stack (`MarkdownPreviewView`, `MarkdownPreviewTheme`, `CodeSyntaxHighlighter`, `CodePalette`, `EditorTheme`, or anything they grow into) must be evaluated for membership in the future `SimpleMarkdownQuickLook` extension target. If it is shared, the file belongs at the app-target root and the extension picks it up via target membership — no duplication. If a rendering asset (font, image, asset catalog) is used by the extension, it must be declared in the extension's own `Info.plist` (or asset catalog); `UIAppFonts` is per-bundle and does not inherit from the host app.
 
 ## Before claiming done
 

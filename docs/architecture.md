@@ -7,10 +7,11 @@ A minimalist, **read-only** Markdown reader for iOS built with SwiftUI. Document
 | Target | Type | Role |
 | --- | --- | --- |
 | `SimpleMarkdown` | App | SwiftUI reader + library |
+| `SimpleMarkdownQuickLook` | Quick Look Preview Extension | System preview of `.md` files (planned, not yet created) |
 | `SimpleMarkdownTests` | Unit tests | XCTest, model/search/loader logic |
 | `SimpleMarkdownUITests` | UI tests | XCUITest, library + search flows |
 
-Single Xcode project: `SimpleMarkdown.xcodeproj`. External dependency: `MarkdownUI` (Swift Package) for parsing/rendering. Custom fonts in `SimpleMarkdown/Fonts/` (JetBrains Mono) registered via `UIAppFonts` in `Info.plist`.
+Single Xcode project: `SimpleMarkdown.xcodeproj`. External dependency: `MarkdownUI` (Swift Package) for parsing/rendering. Custom fonts in `SimpleMarkdown/Fonts/` (JetBrains Mono) registered via `UIAppFonts` in `Info.plist`. The future `SimpleMarkdownQuickLook` extension must declare `UIAppFonts` in its own `Info.plist` — `UIAppFonts` is per-bundle, and the extension's bundle does not inherit from the host app.
 
 ## Module map
 
@@ -102,6 +103,19 @@ The import stores a single immutable copy. No source URL, metadata, or refresh i
 - `ParsedQuery.matches(_:plainText:)` enforces the half-open date interval `[modifiedAfter, modifiedBefore)`, then `allSatisfy` over title, content, and free-text terms.
 - `LibrarySearch.ranges(in:query:)` does case- and diacritic-insensitive locale-aware matching. `firstRange(in:query:)` is the same scan returning the earliest hit (or `nil`), which `contains(_:query:)` rides on to answer yes/no without allocating an array. `snippet(in:terms:limit:)` produces a 160-char window around the earliest hit, snapped to word boundaries with `…` ellipses.
 - `SearchView` debounces 200 ms, cancels prior `Task`, and records the query in `RecentSearchesStore` on submit or selection. `QualifierChips` appear when the field is focused. Presented as `fullScreenCover` on compact width, `sheet` otherwise.
+
+### Quick Look preview extension (planned)
+
+The future `SimpleMarkdownQuickLook` target hosts a `QLPreviewingController` that renders `.md` files when the user taps Space in Files or opens a Markdown attachment in Mail. It reuses the rendering code rather than forking it:
+
+- **Shared in both targets** — `MarkdownPreviewView`, `MarkdownPreviewTheme`, `CodeSyntaxHighlighter`, `CodePalette`, `EditorTheme`, `TextDecoding`, `PreviewLoader`. None duplicated.
+- **Excluded from the extension** — `DocumentLibrary`, `SearchIndex`, `LibraryView`, `TitleCache`, and every view that touches the private library. The extension reads the file the system hands it and displays it; it never imports into or reads from the user's library directly. This preserves the "library is private to the app" rule.
+- **Memory budget** — `PreviewLoader.text(at:)` caps reads at 1 MiB. Quick Look grants roughly 120 MiB total, MarkdownUI uses several times the source size, and the page chrome takes its share.
+- **Bundle isolation** — `UIAppFonts` is per-bundle. The extension must redeclare the four JetBrains Mono TTFs in its own `Info.plist`, otherwise the code font falls back to the system font and the preview diverges from the reader.
+- **Content type** — `QLSupportedContentTypes = ["net.daringfireball.markdown"]`. The same UTI the app already imports. `public.plain-text` is intentionally excluded to avoid intercepting every `.txt` on the device.
+- **Side-swipe gutter** — the preview controller insets its hosting view by 12 pt on the leading and trailing edges. Without that gutter, Quick Look's side-swipe gesture is consumed by the SwiftUI view and the user cannot move between previews.
+
+The extension target does not exist yet — Xcode is required to create it. The shared code is already in place; the target membership and `Info.plist` are the only remaining steps.
 
 ## Concurrency
 Value types are `nonisolated` / `Sendable`; `SearchIndex` is an `actor`. `DocumentLibrary` is `@unchecked Sendable` (immutable `rootURL` + `FileManager`). `RemoteMarkdownLoader` is `Sendable` via the `URLSessionProtocol` indirection.
