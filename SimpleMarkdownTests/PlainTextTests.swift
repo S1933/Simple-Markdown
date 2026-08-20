@@ -37,4 +37,29 @@ final class PlainTextTests: XCTestCase {
         let stripped = PlainText.strip("```\nlet user_name = x\n```")
         XCTAssertTrue(stripped.contains("user_name"))
     }
+
+    func testStripsLeadingMarkersWithoutRegex() {
+        XCTAssertEqual(PlainText.strip("### Titre"), "Titre")
+        XCTAssertEqual(PlainText.strip("> citation"), "citation")
+        XCTAssertEqual(PlainText.strip(">citation"), "citation")
+        XCTAssertEqual(PlainText.strip("- élément"), "élément")
+        XCTAssertEqual(PlainText.strip("12. élément"), "élément")
+    }
+
+    func testLeavesNonMarkerLinesIntact() {
+        XCTAssertEqual(PlainText.strip("#pas-un-titre"), "#pas-un-titre")
+        XCTAssertEqual(PlainText.strip("#######  sept dièses"), "#######  sept dièses")
+        XCTAssertEqual(PlainText.strip("3.14 est une valeur"), "3.14 est une valeur")
+    }
+
+    func testEmphasisDoesNotSpanLines() {
+        XCTAssertEqual(
+            PlainText.strip("*début de ligne\nligne du milieu\nfin de ligne*"),
+            "*début de ligne ligne du milieu fin de ligne*"
+        )
+    }
+
+    func testCollapsesWhitespaceAcrossJoinedLines() {
+        XCTAssertEqual(PlainText.strip("un\n\n\ndeux    trois"), "un deux trois")
+    }
 }
