@@ -18,8 +18,19 @@ nonisolated enum LibrarySearch {
             || content.map { contains($0, query: query) } == true
     }
 
-    private static func contains(_ text: String, query: String) -> Bool {
-        !ranges(in: text, query: query).isEmpty
+    static func contains(_ text: String, query: String) -> Bool {
+        firstRange(in: text, query: query) != nil
+    }
+
+    static func firstRange(in text: String, query: String) -> Range<String.Index>? {
+        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty, !text.isEmpty else { return nil }
+        return text.range(
+            of: query,
+            options: [.caseInsensitive, .diacriticInsensitive],
+            range: text.startIndex..<text.endIndex,
+            locale: .current
+        )
     }
 
     static func ranges(in text: String, query: String) -> [Range<String.Index>] {
@@ -51,7 +62,7 @@ nonisolated enum LibrarySearch {
         guard !text.isEmpty else { return .empty }
 
         let anchor = terms
-            .compactMap { ranges(in: text, query: $0).first }
+            .compactMap { firstRange(in: text, query: $0) }
             .min { $0.lowerBound < $1.lowerBound }
 
         let window = window(in: text, around: anchor, limit: limit)

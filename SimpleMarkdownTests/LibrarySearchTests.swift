@@ -65,4 +65,29 @@ final class LibrarySearchTests: XCTestCase {
             "Titre gras et code et lien"
         )
     }
+
+    func testFirstRangeFindsTheEarliestOccurrence() {
+        let text = "alpha beta alpha gamma alpha"
+        let range = LibrarySearch.firstRange(in: text, query: "alpha")
+        XCTAssertEqual(range?.lowerBound, text.startIndex)
+    }
+
+    func testFirstRangeIsCaseAndDiacriticInsensitive() {
+        XCTAssertNotNil(LibrarySearch.firstRange(in: "Rapport Général", query: "general"))
+    }
+
+    func testFirstRangeReturnsNilOnEmptyQuery() {
+        XCTAssertNil(LibrarySearch.firstRange(in: "du texte", query: "   "))
+    }
+
+    func testContainsAgreesWithRanges() {
+        let text = "alpha beta gamma"
+        for query in ["alpha", "gamma", "delta", "", "  "] {
+            XCTAssertEqual(
+                LibrarySearch.contains(text, query: query),
+                !LibrarySearch.ranges(in: text, query: query).isEmpty,
+                "désaccord sur \"\(query)\""
+            )
+        }
+    }
 }

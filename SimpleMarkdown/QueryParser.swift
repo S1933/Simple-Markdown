@@ -24,10 +24,10 @@ nonisolated struct ParsedQuery: Equatable, Sendable {
         if let modifiedBefore, document.modifiedAt >= modifiedBefore { return false }
 
         let titleOK = titleTerms.allSatisfy {
-            !LibrarySearch.ranges(in: document.title, query: $0).isEmpty
+            LibrarySearch.contains(document.title, query: $0)
         }
         let contentOK = contentTerms.allSatisfy {
-            !LibrarySearch.ranges(in: plainText, query: $0).isEmpty
+            LibrarySearch.contains(plainText, query: $0)
         }
         let freeOK = freeText.allSatisfy {
             LibrarySearch.matches(document, content: plainText, query: $0)
