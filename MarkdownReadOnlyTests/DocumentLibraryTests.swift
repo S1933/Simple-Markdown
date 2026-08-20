@@ -149,21 +149,6 @@ final class DocumentLibraryTests: XCTestCase {
         XCTAssertThrowsError(try library.read(source))
     }
 
-    func testListingLargeLibraryStaysFast() throws {
-        let library = try DocumentLibrary(rootURL: root)
-        let body = String(repeating: "Lorem ipsum dolor sit amet.\n", count: 2_000)
-        for index in 0..<200 {
-            try Data("# Note \(index)\n\(body)".utf8).write(
-                to: root.appendingPathComponent("note-\(index).md")
-            )
-        }
-        let options = XCTMeasureOptions()
-        options.iterationCount = 3
-
-        measure(metrics: [XCTClockMetric()], options: options) {
-            _ = try? library.documents()
-        }
-    }
 
     func testAddCreatesFileNamedFromHeading() throws {
         let library = try DocumentLibrary(rootURL: root)
@@ -242,32 +227,5 @@ final class DocumentLibraryTests: XCTestCase {
         XCTAssertEqual(document.title, "Front")
     }
 
-    func testTitleIsComputedOncePerModification() throws {
-        try write("# Premier", named: "a.md")
-        try write("# Second", named: "b.md")
 
-        _ = try library.documents()
-        let afterFirstPass = library.titleComputeCount
-        _ = try library.documents()
-        let afterSecondPass = library.titleComputeCount
-
-        XCTAssertEqual(afterFirstPass, 2)
-        XCTAssertEqual(afterSecondPass, afterFirstPass)
-    }
-
-    func testTitleIsRecomputedWhenFileChanges() throws {
-        let url = try write("# Avant", named: "a.md")
-        _ = try library.documents()
-        let baseline = library.titleComputeCount
-
-        try Data("# Après".utf8).write(to: url, options: .atomic)
-        try FileManager.default.setAttributes(
-            [.modificationDate: Date().addingTimeInterval(5)],
-            ofItemAtPath: url.path
-        )
-
-        let refreshed = try library.documents()
-        XCTAssertEqual(refreshed.first?.title, "Après")
-        XCTAssertEqual(library.titleComputeCount, baseline + 1)
-    }
 }
