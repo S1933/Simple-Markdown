@@ -23,6 +23,7 @@ nonisolated struct DocumentLibrary: @unchecked Sendable {
 
     private let rootURL: URL
     private let fileManager: FileManager
+    private let titleCache = TitleCache()
 
     init(rootURL: URL, fileManager: FileManager = .default) throws {
         self.rootURL = rootURL.standardizedFileURL
@@ -32,6 +33,9 @@ nonisolated struct DocumentLibrary: @unchecked Sendable {
             withIntermediateDirectories: true
         )
     }
+
+    /// Title recompute counter — read by tests to assert the cache works.
+    var titleComputeCount: Int { titleCache.computeCount }
 
     static func live(
         fileManager: FileManager = .default,
@@ -117,30 +121,37 @@ nonisolated struct DocumentLibrary: @unchecked Sendable {
 
     func documents() throws -> [LibraryDocument] {
         let keys: Set<URLResourceKey> = [.isRegularFileKey, .contentModificationDateKey]
-        return try fileManager
-            .contentsOfDirectory(
-                at: rootURL,
-                includingPropertiesForKeys: Array(keys),
-                options: [.skipsHiddenFiles]
-            )
-            .compactMap { url in
-                guard Self.markdownExtensions.contains(url.pathExtension.lowercased()) else {
-                    return nil
-                }
-                let values = try url.resourceValues(forKeys: keys)
-                guard values.isRegularFile == true else { return nil }
-                return LibraryDocument(
-                    url: url,
-                    modifiedAt: values.contentModificationDate ?? .distantPast,
-                    title: title(for: url)
-                )
+        let contents = try fileManager.contentsOfDirectory(
+            at: rootURL,
+            includingPropertiesForKeys: Array(keys),
+            options: [.skipsHiddenFiles]
+        )
+
+        var found: [LibraryDocument] = []
+        found.reserveCapacity(contents.count)
+
+        for url in contents {
+            guard Self.markdownExtensions.contains(url.pathExtension.lowercased()) else {
+                continue
             }
-            .sorted {
-                if $0.modifiedAt != $1.modifiedAt {
-                    return $0.modifiedAt > $1.modifiedAt
-                }
-                return $0.name.localizedStandardCompare($1.name) == .orderedAscending
+            let values = try url.resourceValues(forKeys: keys)
+            guard values.isRegularFile == true else { continue }
+
+            let modifiedAt = values.contentModificationDate ?? .distantPast
+            let title = titleCache.title(for: url, modifiedAt: modifiedAt) {
+                self.title(for: url)
             }
+            found.append(LibraryDocument(url: url, modifiedAt: modifiedAt, title: title))
+        }
+
+        titleCache.prune(keeping: Set(found.map(\.url)))
+
+        return found.sorted {
+            if $0.modifiedAt != $1.modifiedAt {
+                return $0.modifiedAt > $1.modifiedAt
+            }
+            return $0.name.localizedStandardCompare($1.name) == .orderedAscending
+        }
     }
 
     func add(text: String, suggestedName: String) throws -> URL {
